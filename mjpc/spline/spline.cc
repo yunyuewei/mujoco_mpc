@@ -109,21 +109,29 @@ void TimeSpline::Sample(double time, absl::Span<double> values) const {
     std::fill(values.begin(), values.end(), 0.0);
     return;
   }
-
+  // upper bound of actual time
   auto upper = std::upper_bound(times_.begin(), times_.end(), time);
+
+  // only enter the branch if stop planning
   if (upper == times_.end()) {
+    // printf("upper is at end\n");
     ConstNode n = NodeAt(upper - times_.begin() - 1);
     std::copy(n.values().begin(), n.values().end(), values.begin());
     return;
   }
   if (upper == times_.begin()) {
+    // printf('upper is at begin\n');
     ConstNode n = NodeAt(upper - times_.begin());
     std::copy(n.values().begin(), n.values().end(), values.begin());
     return;
   }
-
+  // printf("bound %f %f %f %f\n", *upper, *times_.begin(), *times_.end(), time);
+  
+  // deque operation to get the lower bound, not number operation
   auto lower = upper - 1;
+  // printf("bound %f %f %f %f %f\n", *lower, *upper, *times_.begin(), *times_.end(), time);
   double t = (time - *lower) / (*upper - *lower);
+  // printf("time %f %f %f %f\n", time, *lower, *upper, t);
   ConstNode lower_node = NodeAt(lower - times_.begin());
   ConstNode upper_node = NodeAt(upper - times_.begin());
   switch (interpolation_) {

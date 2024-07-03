@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "mjpc/task.h"
+#include "mjpc/tasks/musculoskeletal/musculoskeletal.h"
 #include "mjpc/tasks/acrobot/acrobot.h"
 #include "mjpc/tasks/allegro/allegro.h"
 #include "mjpc/tasks/bimanual/insert/insert.h"
@@ -45,6 +46,7 @@ namespace mjpc {
 
 std::vector<std::shared_ptr<Task>> GetTasks() {
   return {
+      std::make_shared<Musculoskeletal>(),
       std::make_shared<Acrobot>(),
       std::make_shared<Allegro>(),
       std::make_shared<aloha::Handover>(),

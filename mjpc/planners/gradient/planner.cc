@@ -70,27 +70,29 @@ void GradientPlanner::Allocate() {
 
   // candidate trajectories
   winner = -1;
+  printf("allocate1\n");
   for (int i = 0; i < kMaxTrajectory; i++) {
     trajectory[i].Initialize(dim_state, dim_action, task->num_residual,
                              task->num_trace, kMaxTrajectoryHorizon);
     trajectory[i].Allocate(kMaxTrajectoryHorizon);
   }
-
+  printf("allocate2\n");
   // model derivatives
   model_derivative.Allocate(dim_state_derivative, dim_action, dim_sensor,
                             kMaxTrajectoryHorizon);
-
+  printf("allocate3\n");
   // costs derivatives
   cost_derivative.Allocate(dim_state_derivative, dim_action, task->num_residual,
                            kMaxTrajectoryHorizon, dim_max);
-
+  printf("allocate4\n");
   // gradient descent
   gradient.Allocate(dim_state_derivative, dim_action, kMaxTrajectoryHorizon);
-
+  printf("allocate5\n");
   // spline mapping
   for (auto& mapping : mappings) {
     mapping->Allocate(model->nu);
   }
+  printf("allocate6\n");
 
   // policy
   for (int i = 0; i < kMaxTrajectory; i++) {

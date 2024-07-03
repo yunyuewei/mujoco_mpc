@@ -52,6 +52,7 @@ void SamplingPolicy::Reset(int horizon, const double* initial_repeated_action) {
 void SamplingPolicy::Action(double* action, const double* state,
                             double time) const {
   CHECK(action != nullptr);
+
   plan.Sample(time, absl::MakeSpan(action, model->nu));
 
   // Clamp controls

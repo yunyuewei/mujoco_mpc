@@ -23,7 +23,7 @@
 #include "mjpc/app.h"
 #include "mjpc/tasks/tasks.h"
 
-ABSL_FLAG(std::string, task, "Quadruped Flat",
+ABSL_FLAG(std::string, task, "Musculoskeletal",
           "Which model to load on startup.");
 
 // machinery for replacing command line error by a macOS dialog box
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     }
     mju_error("Invalid --task flag.");
   }
-
+  printf("seleted task: %s\n", task_name.c_str());
   mjpc::StartApp(tasks, task_id);  // start with quadruped flat
   return 0;
 }

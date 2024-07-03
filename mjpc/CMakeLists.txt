@@ -64,6 +64,8 @@ add_library(
   tasks/manipulation/common.h
   tasks/manipulation/manipulation.cc
   tasks/manipulation/manipulation.h
+  tasks/musculoskeletal/musculoskeletal.cc
+  tasks/musculoskeletal/musculoskeletal.h
   tasks/op3/stand.cc
   tasks/op3/stand.h
   tasks/panda/panda.cc
@@ -93,6 +95,8 @@ add_library(
   planners/model_derivatives.h
   planners/cross_entropy/planner.cc
   planners/cross_entropy/planner.h
+  planners/hierarchical_cross_entropy/planner.cc
+  planners/hierarchical_cross_entropy/planner.h
   planners/robust/robust_planner.cc
   planners/robust/robust_planner.h
   planners/sample_gradient/planner.cc
@@ -101,6 +105,10 @@ add_library(
   planners/sampling/planner.h
   planners/sampling/policy.cc
   planners/sampling/policy.h
+  planners/hierarchical_sampling/planner.cc
+  planners/hierarchical_sampling/planner.h
+  planners/hierarchical_sampling/policy.cc
+  planners/hierarchical_sampling/policy.h
   planners/gradient/gradient.cc
   planners/gradient/gradient.h
   planners/gradient/planner.cc

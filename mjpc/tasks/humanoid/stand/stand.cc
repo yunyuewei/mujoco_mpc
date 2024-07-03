@@ -103,4 +103,7 @@ void Stand::ResidualFn::Residual(const mjModel* model, const mjData* data,
   }
 }
 
+
+
+
 }  // namespace mjpc::humanoid

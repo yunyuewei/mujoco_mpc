@@ -415,7 +415,10 @@ MjpcApp::MjpcApp(std::vector<std::shared_ptr<mjpc::Task>> tasks, int task_id) {
   sim->agent->gui_task_id = task_id;
 
   sim->filename = sim->agent->GetTaskXmlPath(sim->agent->gui_task_id);
+  printf("before load model\n");
   m = LoadModel(sim->agent.get(), *sim);
+  printf("after load model\n");
+
   if (m) d = mj_makeData(m);
 
   // set home keyframe
@@ -429,16 +432,20 @@ MjpcApp::MjpcApp(std::vector<std::shared_ptr<mjpc::Task>> tasks, int task_id) {
   free(ctrlnoise);
   ctrlnoise = (mjtNum*)malloc(sizeof(mjtNum) * m->nu);
   mju_zero(ctrlnoise, m->nu);
-
+  printf("before agent\n");
   // agent
   sim->agent->estimator_enabled = absl::GetFlag(FLAGS_estimator_enabled);
   sim->agent->Initialize(m);
+  printf("agent init\n");
   sim->agent->Allocate();
+  printf("agent allocate\n");
   sim->agent->Reset();
+  printf("agent reset\n");
   sim->agent->PlotInitialize();
+  printf("agent plot\n");
 
   sim->agent->plan_enabled = absl::GetFlag(FLAGS_planner_enabled);
-
+  printf("after agent\n");
   // Get the index of the closest sim percentage to the input.
   float desired_percent = absl::GetFlag(FLAGS_sim_percent_realtime);
   auto closest = std::min_element(
@@ -472,7 +479,7 @@ void MjpcApp::Start() {
 
   // set control callback
   mjcb_control = controller;
-
+  printf("start");
   // set sensor callback
   mjcb_sensor = sensor;
 
@@ -507,7 +514,9 @@ mj::Simulate* MjpcApp::Sim() {
 }
 
 void StartApp(std::vector<std::shared_ptr<mjpc::Task>> tasks, int task_id) {
+  printf("into start app %i\n", task_id);
   MjpcApp app(std::move(tasks), task_id);
+  printf("init app\n");
   app.Start();
 }
 

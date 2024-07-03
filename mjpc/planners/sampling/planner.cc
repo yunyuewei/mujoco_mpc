@@ -163,6 +163,7 @@ int SamplingPlanner::OptimizePolicyCandidates(int ncandidates, int horizon,
 
   // simulate noisy policies
   policy.plan.SetInterpolation(interpolation_);
+
   this->Rollouts(num_trajectory, horizon, pool);
 
   // sort candidate policies and trajectories by score
@@ -198,7 +199,9 @@ void SamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
   auto policy_update_start = std::chrono::steady_clock::now();
 
   CopyCandidateToPolicy(0);
-
+  for (int i = 0; i < num_trajectory_; i++) {
+    printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
+  }
   // improvement: compare nominal to winner
   double best_return = trajectory[0].total_return;
   improvement = mju_max(best_return - trajectory[winner].total_return, 0.0);
@@ -356,23 +359,31 @@ void SamplingPlanner::Rollouts(int num_trajectory, int horizon,
         const std::shared_lock<std::shared_mutex> lock(s.mtx_);
         s.candidate_policy[i].CopyFrom(s.policy, s.policy.num_spline_points);
       }
+      double total_ret = 1.0e6;
+      while(total_ret >= 1.0e6) {
+        // sample noise policy
+        if (i != 0) s.AddNoiseToPolicy(time, i);
 
-      // sample noise policy
-      if (i != 0) s.AddNoiseToPolicy(time, i);
+        // ----- rollout sample policy ----- //
 
-      // ----- rollout sample policy ----- //
+        // policy
+        auto sample_policy_i = [&candidate_policy = s.candidate_policy, &i](
+                                   double* action, const double* state,
+                                   double time) {
+          candidate_policy[i].Action(action, state, time);
+        };
 
-      // policy
-      auto sample_policy_i = [&candidate_policy = s.candidate_policy, &i](
-                                 double* action, const double* state,
-                                 double time) {
-        candidate_policy[i].Action(action, state, time);
-      };
-
-      // policy rollout
-      s.trajectory[i].Rollout(
-          sample_policy_i, task, model, s.data_[ThreadPool::WorkerId()].get(),
-          state.data(), time, mocap.data(), userdata.data(), horizon);
+        // policy rollout
+        s.trajectory[i].Rollout(
+            sample_policy_i, task, model, s.data_[ThreadPool::WorkerId()].get(),
+            state.data(), time, mocap.data(), userdata.data(), horizon);
+        total_ret = s.trajectory[i].total_return;
+        if (total_ret >= 1.0e6) {
+          printf("trajectory %d diverges, resample\n", i);
+        }
+        
+      }
+     
     });
   }
   pool.WaitCount(count_before + num_trajectory);

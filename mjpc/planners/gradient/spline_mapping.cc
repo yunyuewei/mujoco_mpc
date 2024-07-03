@@ -104,14 +104,17 @@ void LinearSplineMapping::Compute(const std::vector<double>& input_times,
 void CubicSplineMapping::Allocate(int dim) {
   // dimensions
   this->dim = dim;
-
+  printf("dim: %d %d %d \n", dim, dim * kMaxTrajectoryHorizon, dim * kMaxGradientSplinePoints);
   // allocate
   mapping.resize((dim * kMaxTrajectoryHorizon) *
                  (dim * kMaxGradientSplinePoints));
+  printf("mapping\n");
   point_slope_mapping.resize((2 * dim * kMaxGradientSplinePoints) *
                              (dim * kMaxGradientSplinePoints));
+  printf("slope mapping\n");
   output_mapping.resize((dim * kMaxTrajectoryHorizon) *
                         (2 * dim * kMaxGradientSplinePoints));
+  printf("output mapping\n");
 }
 
 // compute cubic-interpolation mapping

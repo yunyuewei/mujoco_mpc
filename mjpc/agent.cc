@@ -163,12 +163,18 @@ void Agent::Initialize(const mjModel* model) {
 // allocate memory
 void Agent::Allocate() {
   // planner
+  int count = 0;
   for (const auto& planner : planners_) {
     planner->Allocate();
+    printf("planner sub allocate %d\n", count);
+    count++;
   }
+  printf("planner allocate\n");
+
 
   // state
   state.Allocate(model_);
+  printf("state allocate\n");
 
   // set status
   allocate_enabled = false;
@@ -278,7 +284,7 @@ void Agent::PlanIteration(ThreadPool* pool) {
   // set planning steps
   steps_ =
       mju_max(mju_min(horizon_ / timestep_ + 1, kMaxTrajectoryHorizon), 1);
-
+  // printf("planning steps %d %f %f %d\n", steps_, horizon_, timestep_, kMaxTrajectoryHorizon);
   // plan
   if (!allocate_enabled) {
     // set state

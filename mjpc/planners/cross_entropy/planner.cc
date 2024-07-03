@@ -76,10 +76,13 @@ void CrossEntropyPlanner::Allocate() {
   int num_state = model->nq + model->nv + model->na;
 
   // state
+  // for MS model, there is no mocap or userdata 
   state.resize(num_state);
   mocap.resize(7 * model->nmocap);
   userdata.resize(model->nuserdata);
 
+  // mju_error_i(
+  //       "test stop here", 0);
   // policy
   int num_max_parameter = model->nu * kMaxTrajectoryHorizon;
   policy.Allocate(model, *task, kMaxTrajectoryHorizon);
@@ -191,7 +194,7 @@ void CrossEntropyPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
 
   // simulate noisy policies
   this->Rollouts(num_trajectory, horizon, pool);
-
+  
   // sort candidate policies and trajectories by score
   for (int i = 0; i < num_trajectory; i++) {
     trajectory_order[i] = i;
@@ -205,7 +208,9 @@ void CrossEntropyPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
       [&trajectory = trajectory](int a, int b) {
         return trajectory[a].total_return < trajectory[b].total_return;
       });
-
+  // for (int i = 0; i < num_trajectory_; i++) {
+  //   printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
+  // }
   // stop timer
   rollouts_compute_time = GetDuration(rollouts_start);
 
@@ -319,10 +324,11 @@ void CrossEntropyPlanner::ResamplePolicy(int horizon) {
   double nominal_time = time;
   double time_shift = mju_max(
       (horizon - 1) * model->opt.timestep / (num_spline_points - 1), 1.0e-5);
-
+  // printf("time_shift %f\n", time_shift);
   // get spline points
   for (int t = 0; t < num_spline_points; t++) {
     times_scratch[t] = nominal_time;
+    // process nu data at a time
     resampled_policy.Action(DataAt(parameters_scratch, t * model->nu), nullptr,
                             nominal_time);
     nominal_time += time_shift;
@@ -392,31 +398,44 @@ void CrossEntropyPlanner::Rollouts(int num_trajectory, int horizon,
                    &state = this->state, &time = this->time,
                    &mocap = this->mocap, &userdata = this->userdata, horizon,
                    std_min, i]() {
-      // copy nominal policy and sample noise
-      {
-        const std::shared_lock<std::shared_mutex> lock(s.mtx_);
-        s.candidate_policy[i].CopyFrom(s.resampled_policy,
-                                       s.resampled_policy.num_spline_points);
-        s.candidate_policy[i].plan.SetInterpolation(
-            s.resampled_policy.plan.Interpolation());
 
-        // sample noise
-        s.AddNoiseToPolicy(i, std_min);
+      double total_ret = 1.0e6;
+      while(total_ret >= 1.0e6) {
+        // copy nominal policy and sample noise
+        {
+          const std::shared_lock<std::shared_mutex> lock(s.mtx_);
+          s.candidate_policy[i].CopyFrom(s.resampled_policy,
+                                        s.resampled_policy.num_spline_points);
+          s.candidate_policy[i].plan.SetInterpolation(
+              s.resampled_policy.plan.Interpolation());
+
+          // sample noise
+          s.AddNoiseToPolicy(i, std_min);
+        }
+
+        // ----- rollout sample policy ----- //
+
+        // policy
+        auto sample_policy_i = [&candidate_policy = s.candidate_policy, &i](
+                                  double* action, const double* state,
+                                  double time) {
+          candidate_policy[i].Action(action, state, time);
+        };
+
+        // policy rollout
+        s.trajectory[i].Rollout(
+            sample_policy_i, task, model, s.data_[ThreadPool::WorkerId()].get(),
+            state.data(), time, mocap.data(), userdata.data(), horizon);
+
+        total_ret = s.trajectory[i].total_return;
+        // if (total_ret >= 1.0e6) {
+        //   printf("trajectory %d diverges, resample\n", i);
+        // }
       }
 
-      // ----- rollout sample policy ----- //
+        
 
-      // policy
-      auto sample_policy_i = [&candidate_policy = s.candidate_policy, &i](
-                                 double* action, const double* state,
-                                 double time) {
-        candidate_policy[i].Action(action, state, time);
-      };
 
-      // policy rollout
-      s.trajectory[i].Rollout(
-          sample_policy_i, task, model, s.data_[ThreadPool::WorkerId()].get(),
-          state.data(), time, mocap.data(), userdata.data(), horizon);
     });
   }
   // nominal
