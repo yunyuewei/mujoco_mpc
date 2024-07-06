@@ -62,6 +62,20 @@ class Trajectory {
       const Task* task, const mjModel* model, mjData* data, const double* state,
       double time, const double* mocap, const double* userdata, double xfrc_std,
       double xfrc_rate, int steps);
+  
+  // for hierarchical policy, which use data for action
+  void Rollout(
+      std::function<void(double* action, const double* state, double time, mjData* data)>
+          policy,
+      const Task* task, const mjModel* model, mjData* data, const double* state,
+      double time, const double* mocap, const double* userdata, int steps);
+
+  void NoisyRollout(
+      std::function<void(double* action, const double* state, double time, mjData* data)>
+          policy,
+      const Task* task, const mjModel* model, mjData* data, const double* state,
+      double time, const double* mocap, const double* userdata, double xfrc_std,
+      double xfrc_rate, int steps);
 
   // simulate model forward in time with discrete-time indexed policy
   void RolloutDiscrete(

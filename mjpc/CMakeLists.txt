@@ -12,6 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set(CMAKE_LIBRARY_PATH "/home/anaconda3/envs/lib")
+set(CMAKE_INCLUDE_PATH "/home/anaconda3/envs/include")
+find_package(OsqpEigen REQUIRED)
+# add_executable(example example.cpp)
+# target_link_libraries(
+#   OsqpEigen::OsqpEigen
+#   )
+
+
+
 add_library(threadpool STATIC)
 target_sources(
   threadpool
@@ -21,6 +31,7 @@ target_sources(
 target_link_libraries(
   threadpool
   absl::base
+  
 )
 target_include_directories(threadpool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -171,6 +182,7 @@ target_link_libraries(
   mujoco::platform_ui_adapter
   threadpool
   Threads::Threads
+  OsqpEigen::OsqpEigen
 )
 target_include_directories(libmjpc
   PUBLIC
@@ -192,7 +204,10 @@ target_link_libraries(
   mujoco::mujoco
   threadpool
   Threads::Threads
+  OsqpEigen::OsqpEigen
 )
+
+
 target_include_directories(mjpc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_options(mjpc PUBLIC ${MJPC_COMPILE_OPTIONS})
 target_link_options(mjpc PRIVATE ${MJPC_LINK_OPTIONS})
@@ -216,6 +231,7 @@ target_link_libraries(
   mujoco::mujoco
   threadpool
   Threads::Threads
+  OsqpEigen::OsqpEigen
 )
 target_include_directories(libtestspeed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -228,6 +244,7 @@ target_link_libraries(
   libtestspeed
   absl::flags
   absl::flags_parse
+  OsqpEigen::OsqpEigen
 )
 target_include_directories(testspeed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_options(testspeed PUBLIC ${MJPC_COMPILE_OPTIONS})
@@ -244,3 +261,6 @@ endif()
 if(MJPC_BUILD_GRPC_SERVICE)
   add_subdirectory(grpc)
 endif()
+
+
+

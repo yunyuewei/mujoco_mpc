@@ -61,7 +61,7 @@ void HierarchicalSamplingPlanner::Initialize(mjModel* model, const Task& task) {
   }
 
   // set number of trajectories to rollout
-  num_trajectory_ = GetNumberOrDefault(10, model, "sampling_trajectories");
+  num_trajectory_ = GetNumberOrDefault(1, model, "sampling_trajectories");
 
   interpolation_ = GetNumberOrDefault(SplineInterpolation::kCubicSpline, model,
                                       "sampling_representation");
@@ -218,10 +218,13 @@ void HierarchicalSamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) 
 // compute trajectory using nominal policy
 void HierarchicalSamplingPlanner::NominalTrajectory(int horizon, ThreadPool& pool) {
   // set policy
-  auto nominal_policy = [&cp = candidate_policy[0]](
+  auto nominal_policy = [this, &cp = candidate_policy[0]](
                             double* action, const double* state, double time) {
-    cp.Action(action, state, time);
+    // cp.Action(action, state, time);
+    cp.HierarchicalAction(action, data_[0].get());
   };
+
+
 
   // rollout nominal policy
   trajectory[0].Rollout(nominal_policy, task, model, data_[0].get(),
@@ -234,9 +237,12 @@ void HierarchicalSamplingPlanner::ActionFromPolicy(double* action, const double*
                                        double time, bool use_previous) {
   const std::shared_lock<std::shared_mutex> lock(mtx_);
   if (use_previous) {
-    previous_policy.Action(action, state, time);
+    // previous_policy.Action(action, state, time);
+    std::cout<<"use previous policy"<<std::endl;
+    previous_policy.HierarchicalAction(action, data_[0].get());
   } else {
-    policy.Action(action, state, time);
+    // policy.Action(action, state, time);
+    policy.HierarchicalAction(action, data_[0].get());
   }
 }
 
@@ -304,8 +310,9 @@ void HierarchicalSamplingPlanner::UpdateNominalPolicy(int horizon) {
     // get spline points
     for (int t = 0; t < num_spline_points; t++) {
       TimeSpline::Node node = plan_scratch.AddNode(nominal_time);
-      candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
-                                      nominal_time);
+      // candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
+      //                                 nominal_time);
+      candidate_policy[winner].HierarchicalAction(node.values().data(), data_[0].get());
       nominal_time += time_shift;
     }
 
@@ -374,10 +381,11 @@ void HierarchicalSamplingPlanner::Rollouts(int num_trajectory, int horizon,
         // ----- rollout sample policy ----- //
 
         // policy lambda formulation
-        auto sample_policy_i = [&candidate_policy = s.candidate_policy, &i](
+        auto sample_policy_i = [&s, &candidate_policy = s.candidate_policy, &i](
                                    double* action, const double* state,
                                    double time) {
-          candidate_policy[i].Action(action, state, time);
+          // candidate_policy[i].Action(action, state, time);
+          candidate_policy[i].HierarchicalAction(action, s.data_[ThreadPool::WorkerId()].get());
         };
 
         // policy rollout
@@ -537,7 +545,8 @@ double HierarchicalSamplingPlanner::CandidateScore(int candidate) const {
 void HierarchicalSamplingPlanner::ActionFromCandidatePolicy(double* action, int candidate,
                                                 const double* state,
                                                 double time) {
-  candidate_policy[trajectory_order[candidate]].Action(action, state, time);
+  // candidate_policy[trajectory_order[candidate]].Action(action, state, time);
+  candidate_policy[trajectory_order[candidate]].HierarchicalAction(action, data_[0].get());
 }
 
 void HierarchicalSamplingPlanner::CopyCandidateToPolicy(int candidate) {

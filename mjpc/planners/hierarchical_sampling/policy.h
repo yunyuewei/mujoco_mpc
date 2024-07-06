@@ -14,7 +14,10 @@
 
 #ifndef MJPC_PLANNERS_HIERARHICAL_SAMPLING_POLICY_H_
 #define MJPC_PLANNERS_HIERARHICAL_SAMPLING_POLICY_H_
-
+// osqp-eigen
+#include <OsqpEigen/OsqpEigen.h>
+// eigen
+#include <Eigen/Dense>
 #include <mujoco/mujoco.h>
 #include "mjpc/planners/policy.h"
 #include "mjpc/spline/spline.h"
@@ -42,14 +45,29 @@ class HierarchicalSamplingPolicy : public Policy {
 
   // set action from policy
   void Action(double* action, const double* state, double time) const override;
+  
+  void HierarchicalAction(double* action, mjData* data) const;
 
-  void HighToLowAction(double* high_level_action,  double* action, const double* state, double time) const;
+  // set action from higher level policy
+  void HighToLowAction(double* high_level_action,  double* action, mjData* data) const;
+
+  // Solve a quadratic program
+  Eigen::VectorXd solve_qp(
+    Eigen::SparseMatrix<double> hessian, Eigen::VectorXd gradient, Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::VectorXd initialGuess
+    ) const;
+  
+
+  // get qfrc
+  double* get_qfrc(mjModel* model, mjData* data, double* target_qpos) const;
+
+  // get control
+  double* get_ctrl(mjModel* model, mjData* data, double* target_qpos, double* qfrc) const;
+
   // copy policy
   void CopyFrom(const HierarchicalSamplingPolicy& policy, int horizon);
 
   // copy parameters
   void SetPlan(const mjpc::spline::TimeSpline& plan);
-
 
 
   // ----- members ----- //
@@ -59,6 +77,8 @@ class HierarchicalSamplingPolicy : public Policy {
 
   int dim_high_level_action;  // number of high-level actions  
   std::vector<double> high_level_actions;   // (horizon-1 x num_action)
+
+  
 
 };
 
