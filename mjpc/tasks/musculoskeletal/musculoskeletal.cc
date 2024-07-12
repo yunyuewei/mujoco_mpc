@@ -51,6 +51,12 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
       head_position[2] - 0.25 * (f1_position[2] + f2_position[2] +
                                  f3_position[2] + f4_position[2]);
   residual[counter++] = head_feet_error - parameters_[0];
+
+  // double* pelvis_position = SensorByName(model, data, "pelvis_position");
+  // double pelvis_feet_error =
+  //     pelvis_position[2] - 0.25 * (f1_position[2] + f2_position[2] +
+  //                                f3_position[2] + f4_position[2]);
+  // residual[counter++] = pelvis_feet_error - parameters_[0];
   // printf("head feet error %f\n", head_feet_error);
   // ----- Balance: CoM-feet xy error ----- //
 
@@ -82,8 +88,10 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
 
   
   // capture point
-  double* com_position = SensorByName(model, data, "head_subtreecom");
-  double* com_velocity = SensorByName(model, data, "head_subtreelinvel");
+  // double* com_position = SensorByName(model, data, "head_subtreecom");
+  // double* com_velocity = SensorByName(model, data, "head_subtreelinvel");
+  double* com_position = SensorByName(model, data, "pelvis_subtreecom");
+  double* com_velocity = SensorByName(model, data, "pelvis_subtreelinvel");
   double kFallTime = 0.2;
   double capture_point[3] = {com_position[0], com_position[1], com_position[2]};
   mju_addToScl3(capture_point, com_velocity, kFallTime);
@@ -103,6 +111,26 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   residual[counter++] = com_feet_distance;
   // printf("com feet distance %f %f\n", fxy_avg[0], fxy_avg[1]);
   
+
+  double* com_position_head = SensorByName(model, data, "head_subtreecom");
+  double* com_velocity_head = SensorByName(model, data, "head_subtreelinvel");
+  double kFallTime_head = 0.2;
+  double capture_point_head[3] = {com_position_head[0], com_position_head[1], com_position_head[2]};
+  mju_addToScl3(capture_point_head, com_velocity_head, kFallTime_head);
+
+  // average feet xy position
+  double fxy_avg_head[2] = {0.0};
+  mju_addTo(fxy_avg_head, f1_position, 2);
+  mju_addTo(fxy_avg_head, f2_position, 2);
+  mju_addTo(fxy_avg_head, f3_position, 2);
+  mju_addTo(fxy_avg_head, f4_position, 2);
+  mju_scl(fxy_avg_head, fxy_avg_head, 0.25, 2);
+
+  // double* torso_position = SensorByName(model, data, "torso_position");
+
+  mju_subFrom(fxy_avg_head, capture_point_head, 2);
+  double com_feet_distance_head = mju_norm(fxy_avg_head, 2);
+  residual[counter++] = com_feet_distance_head;
 
   // ----- COM xy velocity should be 0 ----- //
   mju_copy(&residual[counter], com_velocity, 2);

@@ -199,9 +199,9 @@ void SamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
   auto policy_update_start = std::chrono::steady_clock::now();
 
   CopyCandidateToPolicy(0);
-  for (int i = 0; i < num_trajectory_; i++) {
-    printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
-  }
+  // for (int i = 0; i < num_trajectory_; i++) {
+  //   printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
+  // }
   // improvement: compare nominal to winner
   double best_return = trajectory[0].total_return;
   improvement = mju_max(best_return - trajectory[winner].total_return, 0.0);

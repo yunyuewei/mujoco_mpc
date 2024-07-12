@@ -31,15 +31,17 @@
 
   <worldbody>
     <geom name="floor" pos="0 0 0" size="10 1 0.125" type="plane" condim="3" rgba="1 1 1 1" material="grid_vis"></geom>
+    <site name="floor_spring_right" group="1" size="0.01" pos="0 0 0"></site>
+    <site name="floor_spring_left" group="1" size="0.01" pos="0 0 0"></site>
     <site name="leg_jump_target" pos="0 0 -0.1" size="0.1" rgba="0.95 0.5 0.5 0" type="sphere" material="grid_vis"></site>
-    <body name="pelvis" pos="0 0 0.95" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
-      <!-- <joint name="pelvis_tz" type="slide" pos="0 0 0" axis="       0        0        1" limited="true" range="      -3        3" ref="0" armature="0" damping="0" stiffness="0"></joint>
+    <body name="pelvis" pos="0 0 0.935" quat="0.7071067811865475 0.7071067811865475 0.0 0.0">
+      <joint name="pelvis_tz" type="slide" pos="0 0 0" axis="       0        0        1" limited="true" range="      -3        3" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <joint name="pelvis_ty" type="slide" pos="0 0 0" axis="       0        1        0" limited="true" range="      -1        2" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <joint name="pelvis_tx" type="slide" pos="0 0 0" axis="       1        0        0" limited="false" range="      -5        5" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <joint name="pelvis_tilt" type="hinge" pos="0 0 0" axis="       0        0        1" limited="true" range=" -1.5708   1.5708" ref="0" armature="0" damping="0" stiffness="0"></joint>
       <joint name="pelvis_list" type="hinge" pos="0 0 0" axis="       1        0        0" limited="true" range=" -1.5708   1.5708" ref="0" armature="0" damping="0" stiffness="0"></joint>
-      <joint name="pelvis_rotation" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range=" -1.5708   1.5708" ref="0" armature="0" damping="0" stiffness="0"></joint> -->
-      <joint type="free" stiffness="0" damping="0" frictionloss="0" armature="0"/>
+      <joint name="pelvis_rotation" type="hinge" pos="0 0 0" axis="       0        1        0" limited="true" range=" -1.5708   1.5708" ref="0" armature="0" damping="0" stiffness="0"></joint>
+      <!-- <joint type="free" stiffness="0" damping="0" frictionloss="0" armature="0"/> -->
       <include file="Body/Body_Leg_r.xml"/>
       <include file="Body/Body_Leg_l.xml"/>
       <include file="Body/Body_Torso_Armvis.xml"/>
@@ -57,6 +59,7 @@
   <include file="Tendon/Tendon_Arm_r.xml"/>
   <include file="Tendon/Tendon_Arm_l.xml"/>
   <include file="Tendon/Tendon_Torso.xml"/>
+  <!-- <include file="Tendon/Tendon_Standing_Spring.xml"/> -->
 
   <include file="Muscle/Muscle_Leg_r.xml"/>
   <include file="Muscle/Muscle_Leg_l.xml"/>
@@ -65,7 +68,7 @@
 
   <!-- front +x, left +y, up +z-->
   
-  <keyframe>
+  <!-- <keyframe>
     <key qpos='0.000120836 -0.0151255 0.999487 0.7071067811865475 0.7071067811865475 0.0 0.0  
     -0.186396 -0.029085 -0.0444779 0 0.00271425 0.00103867 1.18447 0.0280964 0.146016 0.140086 -0.00548302 -0.00178957 -0.0313585 0.0370764 -0.244561 
     -0.165288 -0.0264798 -0.0516389 0 0.00217382 0.000945766 0.0860984 0.0251364 0.121385 -0.0433678 -0.00287295 -0.00269468 -0.02852 0.0406974 -0.174088'/>
@@ -77,7 +80,7 @@
     <key qvel = '1.5 0. 0. 0. 0. 0. 
         4.9066 0. 0. 0. 0. 0. -3.597 0. 0. 0.633 0. 0. 0. 0. 0. 
         0.175 0. 0. 0. 0. 0. 0.175 0. 0. 0.988 0. 0. 0. 0. 0.'/>
-  </keyframe>
+  </keyframe> -->
 
 
 </mujoco>

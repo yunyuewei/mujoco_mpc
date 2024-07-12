@@ -61,7 +61,7 @@ class HierarchicalSamplingPolicy : public Policy {
   double* get_qfrc(mjModel* model, mjData* data, double* target_qpos) const;
 
   // get control
-  double* get_ctrl(mjModel* model, mjData* data, double* target_qpos, double* qfrc) const;
+  double* get_ctrl(mjModel* model, mjData* data, double* target_pos) const;
 
   // copy policy
   void CopyFrom(const HierarchicalSamplingPolicy& policy, int horizon);

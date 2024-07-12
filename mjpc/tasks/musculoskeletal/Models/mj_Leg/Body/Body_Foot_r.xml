@@ -13,11 +13,9 @@
             <inertial pos="       0        0        0" mass="0.1" fullinertia="   0.001    0.001    0.001        0        0        0"></inertial>
             <joint name="ankle_angle_r" type="hinge" pos="0 0 0" axis="-0.105014 -0.174022 0.979126" limited="true" range="-0.698132 0.523599" ref="0"></joint>
             <body name="calcn_r" pos="-0.04877 -0.04195  0.00792" quat="1.0 -5.320429553087796e-19 1.609289071159989e-17 -2.1848634538867752e-17">
+              <site name="foot_spring_right_human" group="1" size="0.01" pos="0 0 0"></site>
               <geom name="r_foot" type="mesh" mesh="r_foot" class="collision"></geom>
               <inertial pos="     0.1     0.03        0" mass="1.25" fullinertia="  0.0014   0.0039   0.0041        0        0        0"></inertial>
-              
-              <site name="calcn_site_r" pos="-0.01 0 0" size="0.01"/>
-
               <site name="edl_r-P3" pos="0.0919 0.036 0.0008"></site>
               <site name="edl_r-P4" pos="0.1616 0.0055 0.013"></site>
               <site name="ehl_r-P4" pos="0.097 0.0389 -0.0211"></site>
@@ -45,9 +43,8 @@
               <body name="toes_r" pos="  0.1788   -0.002  0.00108" quat="1.0 1.314867274624753e-31 -2.6810890689525335e-17 -3.939849802505862e-32">
                 <geom name="r_bofoot" type="mesh" mesh="r_bofoot" class="collision"></geom>
                 <inertial pos="  0.0346    0.006  -0.0175" mass="0.2166" fullinertia="  0.0001   0.0002    0.001        0        0        0"></inertial>
-                <site name="toes_site_r" pos="0.06 0 0" size="0.01"/>
-
-                
+                <site name="toes_site_r" pos="0.06 0 0" size="0.01"></site>
+                <site name="calcn_site_r" pos="-0.18 0 0" size="0.01"></site>
                 <site name="edl_r-P5" pos="0.0003 0.0047 0.0153"></site>
                 <site name="edl_r-P6" pos="0.0443 -0.0004 0.025"></site>
                 <site name="ehl_r-P7" pos="0.0298 0.0041 -0.0245"></site>

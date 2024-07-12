@@ -25,6 +25,8 @@
 #include "mjpc/utilities.h"
 #include <OsqpEigen/OsqpEigen.h>
 #include <Eigen/Dense>
+#include <time.h>
+
 
 namespace mjpc {
 
@@ -94,7 +96,7 @@ void HierarchicalSamplingPolicy::HighToLowAction(double* high_level_action, doub
   //     double noise = absl::Gaussian<double>(gen_, 0.0, 0.005);
   //     high_level_action[k] = noise;
   //   }
-  Clamp(high_level_action, model->jnt_range, model->nq);
+  // Clamp(high_level_action, model->jnt_range, model->nq);
 
   // mjModel* model_copy = mj_copyModel(NULL, model);
   //test for qfrc: pass
@@ -137,14 +139,19 @@ void HierarchicalSamplingPolicy::HighToLowAction(double* high_level_action, doub
   // solve_qp();
 
   //test ctrl
-  // get_qfrc(model_copy, data_copy, high_level_action);
-  // std::cout<<"qfrc_inverse "<< qfrc_inverse[0] <<std::endl;
+  // time_t start = clock();
+  // double* qfrc_inverse = 
+  // get_qfrc(model_copy, data, high_level_action);
+  // std::cout<<"get force used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+  // start = clock();
+  // std::cout<<"test "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
   // get_ctrl(model_copy, data, high_level_action, qfrc_inverse);
+  // std::cout<<"get ctrl used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
 
-
+  // std::cout<<"finish id"<<std::endl;
   // double* qfrc_inverse = get_qfrc(model_copy, data_copy, high_level_action);
   // // std::cout<<"qfrc_inverse "<< qfrc_inverse[0] <<std::endl;
-  // double* ctrl = get_ctrl(model_copy, data, high_level_action, qfrc_inverse);
+  // double* ctrl = get_ctrl(model_copy, data, high_level_action);
 
   // mju_error_i(
   //       "run end here", 0
@@ -341,10 +348,10 @@ double* HierarchicalSamplingPolicy::get_qfrc(mjModel* model, mjData* data, doubl
 }
 
 // get control
-double* HierarchicalSamplingPolicy::get_ctrl(mjModel* model, mjData* data, double* target_qpos, double* qfrc) const{
-  double qfrc_scaler = 100;
+double* HierarchicalSamplingPolicy::get_ctrl(mjModel* model, mjData* data, double* target_qpos) const{
+  // double qfrc_scaler = 100;
   double qvel_scaler = 5;
-
+  // time_t start = clock();
   // Compute the control needed to reach the target position in the next mujoco step
   Eigen::VectorXd act_vec = Eigen::Map<Eigen::VectorXd>(data->act, model->nu);
   Eigen::VectorXd ctrl0 = Eigen::Map<Eigen::VectorXd>(data->ctrl, model->nu);
@@ -395,32 +402,39 @@ double* HierarchicalSamplingPolicy::get_ctrl(mjModel* model, mjData* data, doubl
 
   // std::cout<<"bias "<< bias <<std::endl;
   // std::cout<<"gain "<< gain <<std::endl;
+  // std::cout<<"get gains used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+
+    // start = clock();
 
 
+  // Eigen::MatrixXd AM = Eigen::Map<Eigen::MatrixXd>(data_copy->actuator_moment, model->nv, model->nu);
+  // // ---- ctrl computation
+  // Eigen::MatrixXd P = 2 * AM.transpose() * AM;
 
-  Eigen::MatrixXd AM = Eigen::Map<Eigen::MatrixXd>(data_copy->actuator_moment, model->nv, model->nu);
-  // ---- ctrl computation
-  Eigen::MatrixXd P = 2 * AM.transpose() * AM;
+  // Eigen::VectorXd qfrc_vec = Eigen::Map<Eigen::VectorXd>(qfrc, model->nv);
+  // // std::cout<<"qfrc_vec "<<qfrc_vec<<std::endl;
+  // // std::cout<<"AM shape "<<AM.rows()<<" "<<AM.cols()<<std::endl;
+  // // std::cout<<"vac shape "<<(gain.array() * act_vec.array()).rows()<<" "<<(gain.array() * act_vec.array()).cols()<<std::endl;
 
-  Eigen::VectorXd qfrc_vec = Eigen::Map<Eigen::VectorXd>(qfrc, model->nv);
-  // std::cout<<"qfrc_vec "<<qfrc_vec<<std::endl;
-  // std::cout<<"AM shape "<<AM.rows()<<" "<<AM.cols()<<std::endl;
-  // std::cout<<"vac shape "<<(gain.array() * act_vec.array()).rows()<<" "<<(gain.array() * act_vec.array()).cols()<<std::endl;
-
-  // std::cout<<(gain.array() * act_vec.array()).size()<<std::endl;
-  Eigen::VectorXd gain_act = (gain.array() * act_vec.array());
-  Eigen::VectorXd k =  AM * gain_act + AM * bias - (qfrc_vec/qfrc_scaler);
-  Eigen::VectorXd q = 2 * k.transpose() * AM;
-  Eigen::VectorXd lb = gain.array() * (1 - act_vec.array()) * ts / (t2.array() + t1.array() * (1 - act_vec.array()));
-  Eigen::VectorXd ub = - gain.array() * act_vec.array() * ts / (t2.array() - t1.array() * act_vec.array());
-  Eigen::VectorXd x0 = (gain.array() * (ctrl0.array() - act_vec.array()) * ts) / ((ctrl0.array() - act_vec.array()) * t1.array() + t2.array());
+  // // std::cout<<(gain.array() * act_vec.array()).size()<<std::endl;
+  // Eigen::VectorXd gain_act = (gain.array() * act_vec.array());
+  // Eigen::VectorXd k =  AM * gain_act + AM * bias - (qfrc_vec/qfrc_scaler);
+  // Eigen::VectorXd q = 2 * k.transpose() * AM;
+  // Eigen::VectorXd lb = gain.array() * (1 - act_vec.array()) * ts / (t2.array() + t1.array() * (1 - act_vec.array()));
+  // Eigen::VectorXd ub = - gain.array() * act_vec.array() * ts / (t2.array() - t1.array() * act_vec.array());
+  // Eigen::VectorXd x0 = (gain.array() * (ctrl0.array() - act_vec.array()) * ts) / ((ctrl0.array() - act_vec.array()) * t1.array() + t2.array());
   
-  Eigen::SparseMatrix<double> P_sparse = P.sparseView();
-  
+  // Eigen::SparseMatrix<double> P_sparse = P.sparseView();
+  // std::cout<<"get matrices used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+
+  // start = clock();
   // Eigen::VectorXd x = solve_qp(P_sparse, q, lb, ub, x0);
-  Eigen::VectorXd x = Eigen::VectorXd::Zero(model->nu); 
+  // std::cout<<"get qp used"<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+  // Eigen::VectorXd x = Eigen::VectorXd::Zero(model->nu); 
   
-  Eigen::VectorXd ctrl_vec = act_vec.array() + x.array() * t2.array() / ((gain.array() * ts) - x.array() * t1.array());
+  // Eigen::VectorXd ctrl_vec = act_vec.array() + x.array() * t2.array() / ((gain.array() * ts) - x.array() * t1.array());
+  Eigen::VectorXd ctrl_vec = act_vec.array() / ((gain.array() * ts));
+
   // for (int i = 0; i < ctrl.size(); ++i) {
   // ctrl[i] = std::clamp(ctrl[i], 0.0, 1.0);
   // }
