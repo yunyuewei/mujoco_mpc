@@ -109,9 +109,9 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   mju_subFrom(fxy_avg, capture_point, 2);
   double com_feet_distance = mju_norm(fxy_avg, 2);
   residual[counter++] = com_feet_distance;
-  // printf("com feet distance %f %f\n", fxy_avg[0], fxy_avg[1]);
+  // printf("com feet distance %f %f\n", fxy_avg[0], fxy_avg[1]);           
   
-
+  // ----- head-feet horizontal distance be 0 ----- //
   double* com_position_head = SensorByName(model, data, "head_subtreecom");
   double* com_velocity_head = SensorByName(model, data, "head_subtreelinvel");
   double kFallTime_head = 0.2;
@@ -132,6 +132,15 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   double com_feet_distance_head = mju_norm(fxy_avg_head, 2);
   residual[counter++] = com_feet_distance_head;
 
+
+
+  // ----- head-pelvis horizontal distance be 0 ----- //
+  double pelvis_xy[2] = {com_position[0], com_position[1]};
+  mju_subFrom(pelvis_xy, capture_point_head, 2);
+  double com_distance_head_pelvis = mju_norm(pelvis_xy, 2);
+  residual[counter++] = com_distance_head_pelvis;
+
+
   // ----- COM xy velocity should be 0 ----- //
   mju_copy(&residual[counter], com_velocity, 2);
   // mju_copy(&residual[counter], 0, 2);
@@ -146,19 +155,21 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   mju_copy(&residual[counter], data->ctrl, model->nu);
   counter += model->nu;
   // printf("joint number %d\n", model->nv);
+
+  
   // ----- disorder----- //
   //penalize muscle activate where the muscle length increase
   // double muscle_length = data->actuator_length;
-  double backward_activation = 0;
-  for (int i = 0; i < model->nsensor; i++) {
-    double length_diff = data->actuator_length[i] - model->actuator_length0[i];
-    if (length_diff > 0 && data->ctrl[i] > 0) {
-      backward_activation = backward_activation + data->ctrl[i];
-      // printf("backward activation: %f %d\n", data->ctrl[i], i);
-    }
-  }
-  // printf("backward activation: %f\n", backward_activation);
-  residual[counter++] = backward_activation;
+  // double backward_activation = 0;
+  // for (int i = 0; i < model->nsensor; i++) {
+  //   double length_diff = data->actuator_length[i] - model->actuator_length0[i];
+  //   if (length_diff > 0 && data->ctrl[i] > 0) {
+  //     backward_activation = backward_activation + data->ctrl[i];
+  //     // printf("backward activation: %f %d\n", data->ctrl[i], i);
+  //   }
+  // }
+  // // printf("backward activation: %f\n", backward_activation);
+  // residual[counter++] = backward_activation;
   // counter += 1;
 
 

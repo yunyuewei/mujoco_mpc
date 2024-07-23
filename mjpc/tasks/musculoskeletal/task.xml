@@ -3,14 +3,14 @@
   <!-- modified from: https://github.com/google-deepmind/dm_control/blob/main/dm_control/suite/swimmer.xml -->
   <!-- <include file="swimmer_modified.xml" /> -->
   <!-- <include file="Models/mj_FullBody/mj_fullbody_simple.xml"/> -->
-  <!-- <include file="Models/mj_Leg/mj_fullbody_leg.xml"/> -->
+  <include file="Models/mj_Leg/mj_fullbody_leg.xml"/>
 
   <!-- joint actuator -->
   <!-- <include file="Models/mj_Leg/mj_fullbody_leg_motor.xml"/> -->
   <!-- <include file="Models/mj_Leg/80mus_noarm_wrap_motor.xml"/> -->
   <!-- <include file="Models/mj_FullBody/mj_fullbody_simple_motor.xml"/> -->
     <!-- <include file="Models/env_test_models/80mus_noarm_wrap_stand.xml"/> -->
-    <include file="Models/mj_FullBody/mj_fullbody_simple.xml"/>
+    <!-- <include file="Models/mj_FullBody/mj_fullbody_simple.xml"/> -->
 
   
 
@@ -42,13 +42,14 @@
     <user name="Height" dim="1" user="6 100.0 0.0 100.0 0.1" />
     <user name="Balance" dim="1" user="6 50.0 0.0 100.0 0.1" />
     <user name="Balance_head" dim="1" user="6 50.0 0.0 100.0 0.1" />
+    <user name="Balance_head_pelvis" dim="1" user="6 50.0 0.0 100.0 0.1" />
     <user name="CoM Vel." dim="2" user="0 10.0 0.0 100.0" />
     
     <!-- <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" /> -->
     <!-- <user name="Control" dim="700" user="0 0.1 0 1" /> -->
 
-    <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" /> 
-    <user name="Control" dim="700" user="0 0.1 0 10" />
+    <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" /> 
+    <user name="Control" dim="100" user="0 0.1 0 10" />
 
     <!-- lower 80 -->
         <!-- <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" /> -->
@@ -57,7 +58,7 @@
 
     <!-- <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" /> -->
     <!-- <user name="Control" dim="14" user="0 0.1 0 1" /> -->
-    <user name="Disorder" dim="1" user="0 0 0 100" />
+    <!-- <user name="Disorder" dim="1" user="0 0 0 100" /> -->
 
     <!-- <user name="Distance" dim="2" user="2 10 0 10 0.04" /> -->
 
