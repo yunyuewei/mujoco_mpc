@@ -21,7 +21,7 @@
 #include "mjpc/task.h"
 #include "mjpc/trajectory.h"
 #include "mjpc/utilities.h"
-
+#include <time.h>
 namespace mjpc {
 
 using mjpc::spline::TimeSpline;
@@ -52,11 +52,12 @@ void SamplingPolicy::Reset(int horizon, const double* initial_repeated_action) {
 void SamplingPolicy::Action(double* action, const double* state,
                             double time) const {
   CHECK(action != nullptr);
-
+  // time_t start = clock();
   plan.Sample(time, absl::MakeSpan(action, model->nu));
 
   // Clamp controls
   Clamp(action, model->actuator_ctrlrange, model->nu);
+  // std::cout<<"get action used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
 }
 
 // copy policy

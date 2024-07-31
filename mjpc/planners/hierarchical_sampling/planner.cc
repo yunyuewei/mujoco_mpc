@@ -61,7 +61,7 @@ void HierarchicalSamplingPlanner::Initialize(mjModel* model, const Task& task) {
   }
 
   // set number of trajectories to rollout
-  num_trajectory_ = GetNumberOrDefault(1, model, "sampling_trajectories");
+  num_trajectory_ = GetNumberOrDefault(10, model, "sampling_trajectories");
 
   interpolation_ = GetNumberOrDefault(SplineInterpolation::kCubicSpline, model,
                                       "sampling_representation");
@@ -191,6 +191,79 @@ int HierarchicalSamplingPlanner::OptimizePolicyCandidates(int ncandidates, int h
   return ncandidates;
 }
 
+
+//Sync current mj data for policy
+void HierarchicalSamplingPlanner::SyncPolicyData(HierarchicalSamplingPolicy policy, mjData* src) {
+
+  
+  // copy data for inverse dynamic
+  // copy simulation state
+  // std::cout<<"start copy"<<std::endl;
+  policy.data_copy->time = src->time;
+  mju_copy(policy.data_copy->qpos, src->qpos, model->nq);
+  mju_copy(policy.data_copy->qvel, src->qvel, model->nv);
+  mju_copy(policy.data_copy->act,  src->act,  model->na);
+
+  // // copy mocap body pose and userdata
+  // mju_copy(policy.data_copy->mocap_pos,  src->mocap_pos,  3*model->nmocap);
+  // mju_copy(policy.data_copy->mocap_quat, src->mocap_quat, 4*model->nmocap);
+  // mju_copy(policy.data_copy->userdata,   src->userdata,   model->nuserdata);
+
+  // copy warm-start acceleration
+  mju_copy(policy.data_copy->qacc_warmstart, src->qacc_warmstart, model->nv);
+  // std::cout<<"finish copy 1"<<std::endl;
+
+  // copy data for computing gain and bias parameter
+  // copy simulation state
+  policy.data_copy2->time = src->time;
+  mju_copy(policy.data_copy2->qpos, src->qpos, model->nq);
+  mju_copy(policy.data_copy2->qvel, src->qvel, model->nv);
+  mju_copy(policy.data_copy2->act,  src->act,  model->na);
+  mju_copy(policy.data_copy2->ctrl,  src->ctrl,  model->nu);
+  // // copy mocap body pose and userdata
+  // mju_copy(policy.data_copy2->mocap_pos,  src->mocap_pos,  3*model->nmocap);
+  // mju_copy(policy.data_copy2->mocap_quat, src->mocap_quat, 4*model->nmocap);
+  // mju_copy(policy.data_copy2->userdata,   src->userdata,   model->nuserdata);
+
+
+
+  // copy warm-start acceleration
+  mju_copy(policy.data_copy2->qacc_warmstart, src->qacc_warmstart, model->nv);
+  // std::cout<<"finish copy 2"<<std::endl;
+
+  // mj_forward(model, policy.data_copy);
+
+  // mj_forward(model, policy.data_copy2);
+
+  // mj_forwardSkip(model, policy.data_copy, mjSTAGE_POS, 0);
+  // mj_forwardSkip(model, policy.data_copy2, mjSTAGE_POS, 0);
+  // std::cout<<"finish forward"<<std::endl;
+
+  //test copy
+  //forward
+  // mj_forward(model, policy.data_copy);
+  // mj_forward(model, src);
+  
+  // //qacc
+  // for (int i = 0; i < model->nv; i++) {
+  //   std::cout << "origin qacc[" << i << "]: " << src->qacc[i] << std::endl;
+  //   std::cout << "copy qacc[" << i << "]: " << policy.data_copy->qacc[i] << std::endl;
+  // }
+
+  // //inverse dynamic
+  // mj_inverse(model, policy.data_copy);
+  // mj_inverse(model, src);
+
+  // //qfrc
+  // for (int i = 0; i < model->nv; i++) {
+  //   std::cout << "origin qfrc_inverse[" << i << "]: " << src->qfrc_inverse[i] << std::endl;
+  //   std::cout << "copy qfrc_inverse[" << i << "]: " << policy.data_copy->qfrc_inverse[i] << std::endl;
+  // }
+
+  // mju_error_i("run end here", 0);
+}
+
+
 // optimize nominal policy using random sampling
 void HierarchicalSamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
   // resample nominal policy to current time
@@ -201,18 +274,18 @@ void HierarchicalSamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) 
 
   // ----- update policy ----- //
   // start timer
-  auto policy_update_start = std::chrono::steady_clock::now();
-  // std::cout << "CopyCandidateToPolicy" << std::endl;
-  CopyCandidateToPolicy(0);
-  for (int i = 0; i < num_trajectory_; i++) {
-    printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
-  }
-  // improvement: compare nominal to winner
-  double best_return = trajectory[0].total_return;
-  improvement = mju_max(best_return - trajectory[winner].total_return, 0.0);
+  // auto policy_update_start = std::chrono::steady_clock::now();
+  // // std::cout << "CopyCandidateToPolicy" << std::endl;
+  // CopyCandidateToPolicy(0);
+  // for (int i = 0; i < num_trajectory_; i++) {
+  //   printf("total return of trajectory %d %f\n", i, trajectory[i].total_return);
+  // }
+  // // improvement: compare nominal to winner
+  // double best_return = trajectory[0].total_return;
+  // improvement = mju_max(best_return - trajectory[winner].total_return, 0.0);
 
-  // stop timer
-  policy_update_compute_time = GetDuration(policy_update_start);
+  // // stop timer
+  // policy_update_compute_time = GetDuration(policy_update_start);
 }
 
 // compute trajectory using nominal policy
@@ -221,7 +294,14 @@ void HierarchicalSamplingPlanner::NominalTrajectory(int horizon, ThreadPool& poo
   auto nominal_policy = [this, &cp = candidate_policy[0]](
                             double* action, const double* state, double time) {
     // cp.Action(action, state, time);
+    // time_t start = clock();
+    // cp.data_copy = mj_copyData(cp.data_copy, this->model, data_[0].get());
+    // cp.data_copy2 = mj_copyData(cp.data_copy2, this->model, data_[0].get());
+    SyncPolicyData(cp, data_[0].get());
+    // std::cout<<"get copy used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+    // std::cout<<"NomialTrajectory"<<std::endl;
     cp.HierarchicalAction(action, data_[0].get());
+
   };
 
 
@@ -236,12 +316,21 @@ void HierarchicalSamplingPlanner::NominalTrajectory(int horizon, ThreadPool& poo
 void HierarchicalSamplingPlanner::ActionFromPolicy(double* action, const double* state,
                                        double time, bool use_previous) {
   const std::shared_lock<std::shared_mutex> lock(mtx_);
+  
   if (use_previous) {
     // previous_policy.Action(action, state, time);
-    std::cout<<"use previous policy"<<std::endl;
+    // std::cout<<"use previous policy"<<std::endl;
+    // previous_policy.data_copy = mj_copyData(previous_policy.data_copy, model, data_[0].get());
+    // previous_policy.data_copy2 = mj_copyData(previous_policy.data_copy2, model, data_[0].get());
+    // std::cout<<"use previous policy"<<std::endl;
+    SyncPolicyData(previous_policy, data_[0].get());
     previous_policy.HierarchicalAction(action, data_[0].get());
   } else {
     // policy.Action(action, state, time);
+    // policy.data_copy = mj_copyData(policy.data_copy, model, data_[0].get());
+    // policy.data_copy2 = mj_copyData(policy.data_copy2, model, data_[0].get());
+    // std::cout<<"use current policy"<<std::endl;
+    SyncPolicyData(policy, data_[0].get());
     policy.HierarchicalAction(action, data_[0].get());
   }
 }
@@ -306,13 +395,20 @@ void HierarchicalSamplingPlanner::UpdateNominalPolicy(int horizon) {
     plan_scratch.Clear();
     plan_scratch.SetInterpolation(interpolation_);
     plan_scratch.Reserve(num_spline_points);
-
+    // std::cout<<"update nominal policy"<<std::endl;
     // get spline points
     for (int t = 0; t < num_spline_points; t++) {
+      //TODO: double check this part
       TimeSpline::Node node = plan_scratch.AddNode(nominal_time);
-      // candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
-      //                                 nominal_time);
-      candidate_policy[winner].HierarchicalAction(node.values().data(), data_[0].get());
+      candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
+                                      nominal_time);
+
+      // std::cout<<"action "<<t<<std::endl;
+      // std::cout<<"winner "<<winner<<std::endl;
+      // candidate_policy[winner].data_copy = mj_copyData(candidate_policy[winner].data_copy, model, data_[0].get());
+      // candidate_policy[winner].data_copy2 = mj_copyData(candidate_policy[winner].data_copy2, model, data_[0].get());
+      // SyncPolicyData(candidate_policy[winner], data_[winner].get());
+      // candidate_policy[winner].HierarchicalAction(node.values().data(), data_[winner].get());
       nominal_time += time_shift;
     }
 
@@ -341,8 +437,15 @@ void HierarchicalSamplingPlanner::AddNoiseToPolicy(double start_time, int i) {
 
   for (const TimeSpline::Node& node : candidate_policy[i].plan) {
     for (int k = 0; k < policy.dim_high_level_action; k++) {
-      double scale = 0.5 * (model->actuator_ctrlrange[2 * k + 1] -
-                            model->actuator_ctrlrange[2 * k]);
+      // double scale = 0.5 * (model->actuator_ctrlrange[2 * k + 1] -
+      //                       model->actuator_ctrlrange[2 * k]);
+      double scale = 0.5 * (model->jnt_range[2 * k + 1] -
+                            model->jnt_range[2 * k]);
+      for (int k = 0; k < policy.dim_high_level_action; k++) {
+        if (scale > 3.14*2) {
+          scale = 3.14*2;
+        }
+      }
       double noise = absl::Gaussian<double>(gen_, 0.0, scale * std);
       node.values()[k] += noise;
     }
@@ -385,6 +488,10 @@ void HierarchicalSamplingPlanner::Rollouts(int num_trajectory, int horizon,
                                    double* action, const double* state,
                                    double time) {
           // candidate_policy[i].Action(action, state, time);
+          // s.candidate_policy[i].data_copy = mj_copyData(s.candidate_policy[i].data_copy, s.model, s.data_[ThreadPool::WorkerId()].get());
+          // s.candidate_policy[i].data_copy2 = mj_copyData(s.candidate_policy[i].data_copy2, s.model, s.data_[ThreadPool::WorkerId()].get());
+          s.SyncPolicyData(candidate_policy[i], s.data_[ThreadPool::WorkerId()].get());
+          // std::cout<<"Rollouts"<<std::endl;
           candidate_policy[i].HierarchicalAction(action, s.data_[ThreadPool::WorkerId()].get());
         };
 
@@ -546,6 +653,10 @@ void HierarchicalSamplingPlanner::ActionFromCandidatePolicy(double* action, int 
                                                 const double* state,
                                                 double time) {
   // candidate_policy[trajectory_order[candidate]].Action(action, state, time);
+  // candidate_policy[trajectory_order[candidate]].data_copy = mj_copyData(candidate_policy[trajectory_order[candidate]].data_copy, model, data_[0].get());
+  // candidate_policy[trajectory_order[candidate]].data_copy2 = mj_copyData(candidate_policy[trajectory_order[candidate]].data_copy2, model, data_[0].get());
+  SyncPolicyData(candidate_policy[trajectory_order[candidate]], data_[0].get());
+  // std::cout<<"ActionFromCandidatePolicy"<<std::endl;
   candidate_policy[trajectory_order[candidate]].HierarchicalAction(action, data_[0].get());
 }
 

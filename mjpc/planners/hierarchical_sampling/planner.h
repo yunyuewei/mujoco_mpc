@@ -111,6 +111,9 @@ class HierarchicalSamplingPlanner : public RankedPlanner {
 
   void CopyCandidateToPolicy(int candidate) override;
 
+  //Sync current mj data for policy
+  void SyncPolicyData(HierarchicalSamplingPolicy policy, mjData* src);
+
   // ----- members ----- //
   mjModel* model;
   const Task* task;

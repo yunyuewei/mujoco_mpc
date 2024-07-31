@@ -22,6 +22,7 @@
 #include "mjpc/planners/policy.h"
 #include "mjpc/spline/spline.h"
 #include "mjpc/task.h"
+#include <glpk.h>
 
 namespace mjpc {
 
@@ -53,15 +54,26 @@ class HierarchicalSamplingPolicy : public Policy {
 
   // Solve a quadratic program
   Eigen::VectorXd solve_qp(
-    Eigen::SparseMatrix<double> hessian, Eigen::VectorXd gradient, Eigen::VectorXd lowerBound, Eigen::VectorXd upperBound, Eigen::VectorXd initialGuess
+    Eigen::SparseMatrix<double> hessian, 
+    Eigen::VectorXd gradient, 
+    Eigen::SparseMatrix<double> constraintMatrix,
+    Eigen::VectorXd lowerBound, 
+    Eigen::VectorXd upperBound, 
+    Eigen::VectorXd initialGuess
     ) const;
   
+  //solve a linear program
+  Eigen::VectorXd linprog(Eigen::VectorXd c,
+                      Eigen::MatrixXd A,
+                      Eigen::VectorXd b,
+                      Eigen::VectorXd x0) const;
+
 
   // get qfrc
-  double* get_qfrc(mjModel* model, mjData* data, double* target_qpos) const;
+  double* get_qfrc(mjModel* model, double* target_qpos) const;
 
   // get control
-  double* get_ctrl(mjModel* model, mjData* data, double* target_pos) const;
+  Eigen::VectorXd get_ctrl(double* target_pos, double* qfrc) const;
 
   // copy policy
   void CopyFrom(const HierarchicalSamplingPolicy& policy, int horizon);
@@ -74,12 +86,25 @@ class HierarchicalSamplingPolicy : public Policy {
   const mjModel* model;
   mjpc::spline::TimeSpline plan;
   int num_spline_points;
+  mjData* data_copy; //for inverse dynamics
+  mjData* data_copy2; // for control compute
+  mjModel* model_copy;
 
   int dim_high_level_action;  // number of high-level actions  
   std::vector<double> high_level_actions;   // (horizon-1 x num_action)
 
-  
+  //used in QP
+  Eigen::SparseMatrix<double> P;
+  Eigen::VectorXd q;
 
+
+  //used in LP
+  Eigen::VectorXd c;
+  // Eigen::MatrixXd linearMatrix;
+
+  // Eigen::SparseMatrix<double> linearMatrix;
+
+  // bool initialized = false;
 };
 
 }  // namespace mjpc

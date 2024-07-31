@@ -29,7 +29,7 @@
 #include "mjpc/threadpool.h"
 #include "mjpc/trajectory.h"
 #include "mjpc/utilities.h"
-
+#include <Eigen/Dense>
 namespace mjpc {
 
 namespace mju = ::mujoco::util_mjpc;
@@ -299,8 +299,13 @@ void SamplingPlanner::UpdateNominalPolicy(int horizon) {
     // get spline points
     for (int t = 0; t < num_spline_points; t++) {
       TimeSpline::Node node = plan_scratch.AddNode(nominal_time);
+      // Eigen::VectorXd values = Eigen::Map<Eigen::VectorXd>(node.values().data(), node.values().size());
+      // std::cout<<"values "<<t<<" "<<values.maxCoeff()<<" "<<values.minCoeff()<<std::endl;
+      //use current best policy to set plan value
       candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
                                       nominal_time);
+      // values = Eigen::Map<Eigen::VectorXd>(node.values().data(), node.values().size());
+      // std::cout<<"new values "<<t<<" "<<values.maxCoeff()<<" "<<values.minCoeff()<<std::endl;
       nominal_time += time_shift;
     }
 

@@ -2,8 +2,8 @@
   <include file="../common.xml" />
   <!-- modified from: https://github.com/google-deepmind/dm_control/blob/main/dm_control/suite/swimmer.xml -->
   <!-- <include file="swimmer_modified.xml" /> -->
-  <!-- <include file="Models/mj_FullBody/mj_fullbody_simple.xml"/> -->
-  <include file="Models/mj_Leg/mj_fullbody_leg.xml"/>
+  <include file="Models/mj_FullBody/mj_fullbody_simple.xml"/>
+  <!-- <include file="Models/mj_Leg/mj_fullbody_leg.xml"/> -->
 
   <!-- joint actuator -->
   <!-- <include file="Models/mj_Leg/mj_fullbody_leg_motor.xml"/> -->
@@ -22,7 +22,7 @@
     <!-- agent -->
     <numeric name="agent_planner" data="0" />
     <numeric name="agent_horizon" data="0.5" />
-    <numeric name="agent_timestep" data="0.015" />
+    <numeric name="agent_timestep" data="0.005" />
     <numeric name="sampling_spline_points" data="3 1 10" />
     <numeric name="sampling_exploration" data="0.05" />
     <numeric name="gradient_spline_points" data="5" />
@@ -45,11 +45,11 @@
     <user name="Balance_head_pelvis" dim="1" user="6 50.0 0.0 100.0 0.1" />
     <user name="CoM Vel." dim="2" user="0 10.0 0.0 100.0" />
     
-    <!-- <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" /> -->
-    <!-- <user name="Control" dim="700" user="0 0.1 0 1" /> -->
+    <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" />
+    <user name="Control" dim="700" user="0 0.1 0 1" />
 
-    <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" /> 
-    <user name="Control" dim="100" user="0 0.1 0 10" />
+    <!-- <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" />  -->
+    <!-- <user name="Control" dim="100" user="0 0.1 0 10" /> -->
 
     <!-- lower 80 -->
         <!-- <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" /> -->

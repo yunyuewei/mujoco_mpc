@@ -14,12 +14,17 @@
 
 set(CMAKE_LIBRARY_PATH "/home/anaconda3/envs/lib")
 set(CMAKE_INCLUDE_PATH "/home/anaconda3/envs/include")
+set(CMAKE_LIBRARY_PATH "/usr/local/lib")
+set(CMAKE_INCLUDE_PATH "/usr/local/include")
+# set(CMAKE_LIBRARY_PATH "/home/anaconda3/lib")
+# set(CMAKE_INCLUDE_PATH "/home/anaconda3/include")
 find_package(OsqpEigen REQUIRED)
+
+# find_package(libglpk REQUIRED)
 # add_executable(example example.cpp)
 # target_link_libraries(
 #   OsqpEigen::OsqpEigen
 #   )
-
 
 
 add_library(threadpool STATIC)
@@ -183,6 +188,8 @@ target_link_libraries(
   threadpool
   Threads::Threads
   OsqpEigen::OsqpEigen
+  libglpk.so.40
+  
 )
 target_include_directories(libmjpc
   PUBLIC
@@ -205,6 +212,8 @@ target_link_libraries(
   threadpool
   Threads::Threads
   OsqpEigen::OsqpEigen
+  libglpk.so.40
+  
 )
 
 
@@ -232,6 +241,8 @@ target_link_libraries(
   threadpool
   Threads::Threads
   OsqpEigen::OsqpEigen
+  libglpk.so.40
+  
 )
 target_include_directories(libtestspeed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -245,6 +256,8 @@ target_link_libraries(
   absl::flags
   absl::flags_parse
   OsqpEigen::OsqpEigen
+  libglpk.so.40
+  
 )
 target_include_directories(testspeed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_options(testspeed PUBLIC ${MJPC_COMPILE_OPTIONS})

@@ -111,27 +111,28 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   residual[counter++] = com_feet_distance;
   // printf("com feet distance %f %f\n", fxy_avg[0], fxy_avg[1]);           
   
+  // TODO: too slow for this computation
   // ----- head-feet horizontal distance be 0 ----- //
   double* com_position_head = SensorByName(model, data, "head_subtreecom");
-  double* com_velocity_head = SensorByName(model, data, "head_subtreelinvel");
-  double kFallTime_head = 0.2;
+  // double* com_velocity_head = SensorByName(model, data, "head_subtreelinvel");
+  // double kFallTime_head = 0.2;
   double capture_point_head[3] = {com_position_head[0], com_position_head[1], com_position_head[2]};
-  mju_addToScl3(capture_point_head, com_velocity_head, kFallTime_head);
+  // mju_addToScl3(capture_point_head, com_velocity_head, kFallTime_head);
 
-  // average feet xy position
-  double fxy_avg_head[2] = {0.0};
-  mju_addTo(fxy_avg_head, f1_position, 2);
-  mju_addTo(fxy_avg_head, f2_position, 2);
-  mju_addTo(fxy_avg_head, f3_position, 2);
-  mju_addTo(fxy_avg_head, f4_position, 2);
-  mju_scl(fxy_avg_head, fxy_avg_head, 0.25, 2);
+  // // average feet xy position
+  // double fxy_avg_head[2] = {0.0};
+  // mju_addTo(fxy_avg_head, f1_position, 2);
+  // mju_addTo(fxy_avg_head, f2_position, 2);
+  // mju_addTo(fxy_avg_head, f3_position, 2);
+  // mju_addTo(fxy_avg_head, f4_position, 2);
+  // mju_scl(fxy_avg_head, fxy_avg_head, 0.25, 2);
 
-  // double* torso_position = SensorByName(model, data, "torso_position");
+  // // double* torso_position = SensorByName(model, data, "torso_position");
 
-  mju_subFrom(fxy_avg_head, capture_point_head, 2);
-  double com_feet_distance_head = mju_norm(fxy_avg_head, 2);
-  residual[counter++] = com_feet_distance_head;
-
+  // mju_subFrom(fxy_avg_head, capture_point_head, 2);
+  // double com_feet_distance_head = mju_norm(fxy_avg_head, 2);
+  // residual[counter++] = com_feet_distance_head;
+  residual[counter++] = 0;
 
 
   // ----- head-pelvis horizontal distance be 0 ----- //
