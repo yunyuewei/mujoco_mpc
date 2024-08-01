@@ -46,6 +46,7 @@
     <user name="CoM Vel." dim="2" user="0 10.0 0.0 100.0" />
     
     <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" />
+    <!-- <user name="Control" dim="28" user="0 0.1 0 1" /> -->
     <user name="Control" dim="700" user="0 0.1 0 1" />
 
     <!-- <user name="Joint Vel." dim="36" user="0 0.01 0.0 0.1" />  -->

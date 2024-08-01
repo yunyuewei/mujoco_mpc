@@ -574,12 +574,16 @@ Eigen::VectorXd HierarchicalSamplingPolicy::get_ctrl(double* target_qpos, double
 
   // ---- gain, bias, and moment computation
   // mjData* data_copy = mj_copyData(NULL, model, data);
-  data_copy2->qpos = target_qpos;
+  
   // mjtNum* qvel = (mjtNum*) mju_malloc(model->nq * sizeof(mjtNum));
   mju_copy(data_copy2->qvel, target_qpos, model->nq);
   mju_subFrom(data_copy2->qvel, data_copy2->qpos, model->nq);
   mju_scl(data_copy2->qvel, data_copy2->qvel, 1/model->opt.timestep, model->nq);
   mju_scl(data_copy2->qvel, data_copy2->qvel, 1/qvel_scaler, model->nq);
+
+  mju_copy(data_copy2->qpos, target_qpos, model->nq);
+  std::cout<<"qpos "<<data_copy2->qpos[0]<<std::endl;
+  std::cout<<"qvel "<<data_copy2->qvel[0]<<std::endl;
   // data_copy->qvel= qvel; 
   mj_step1(model, data_copy2); // gain, bias, and moment depend on qpos and qvel
   Eigen::VectorXd gain(model->nu);
@@ -592,6 +596,12 @@ Eigen::VectorXd HierarchicalSamplingPolicy::get_ctrl(double* target_qpos, double
     lengthrange[1] = model->actuator_lengthrange[2*idx_actuator+1];
     double velocity = data_copy->actuator_velocity[idx_actuator];
     double acc0 = model->actuator_acc0[idx_actuator];
+    // if (idx_actuator == 0) {
+    //   std::cout<<"length "<<length<<std::endl;
+    //   std::cout<<"lengthrange "<<lengthrange[0]<<" "<<lengthrange[1]<<std::endl;
+    //   std::cout<<"velocity "<<velocity<<std::endl;
+    //   std::cout<<"acc0 "<<acc0<<std::endl;
+    // }
     mjtNum* prmb = (mjtNum*) mju_malloc(9 * sizeof(mjtNum));
     // Eigen::VectorXd prmb(9);
     for (int j = 0; j<9; j++) {

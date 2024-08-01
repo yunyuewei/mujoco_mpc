@@ -27,17 +27,18 @@
 #include "mjpc/planners/sample_gradient/planner.h"
 #include "mjpc/planners/sampling/planner.h"
 #include "mjpc/planners/hierarchical_sampling/planner.h"
-
+#include "mjpc/planners/hierarchical_pd/planner.h"
 namespace mjpc {
 const char kPlannerNames[] =
     "Sampling\n"
-    "Hierarchical Sampling";
+    // "Hierarchical Sampling\n"
+    "Hierarchical PD";
     // "Gradient\n"
     // "iLQG\n"
     // "iLQS\n"
     // "Robust Sampling\n"
     // "Cross Entropy\n"
-    // // "Hierarchical Cross Entropy\n"
+    // // // "Hierarchical Cross Entropy\n"
     // "Sample Gradient";
 
 // load all available planners
@@ -46,14 +47,15 @@ std::vector<std::unique_ptr<mjpc::Planner>> LoadPlanners() {
   std::vector<std::unique_ptr<mjpc::Planner>> planners;
 
   planners.emplace_back(new mjpc::SamplingPlanner);
-  planners.emplace_back(new mjpc::HierarchicalSamplingPlanner);
+  // planners.emplace_back(new mjpc::HierarchicalSamplingPlanner);
+  planners.emplace_back(new mjpc::HierarchicalPDPlanner);
   // planners.emplace_back(new mjpc::GradientPlanner);
   // planners.emplace_back(new mjpc::iLQGPlanner);
   // planners.emplace_back(new mjpc::iLQSPlanner);
   // planners.emplace_back(
   //     new RobustPlanner(std::make_unique<mjpc::SamplingPlanner>()));
   // planners.emplace_back(new mjpc::CrossEntropyPlanner);
-  // // planners.emplace_back(new mjpc::HierarchicalCrossEntropyPlanner);
+  // // // planners.emplace_back(new mjpc::HierarchicalCrossEntropyPlanner);
   // planners.emplace_back(new mjpc::SampleGradientPlanner);
   return planners;
 }

@@ -125,6 +125,10 @@ add_library(
   planners/hierarchical_sampling/planner.h
   planners/hierarchical_sampling/policy.cc
   planners/hierarchical_sampling/policy.h
+  planners/hierarchical_pd/planner.cc
+  planners/hierarchical_pd/planner.h
+  planners/hierarchical_pd/policy.cc
+  planners/hierarchical_pd/policy.h
   planners/gradient/gradient.cc
   planners/gradient/gradient.h
   planners/gradient/planner.cc

@@ -26,7 +26,7 @@ namespace mjpc {
 // allocate memory
 void State::Allocate(const mjModel* model) {
   const std::unique_lock<std::shared_mutex> lock(mtx_);
-  state_.resize(model->nq + model->nv + model->na);
+  state_.resize(model->nq + model->nv + model->na*3);
   mocap_.resize(7 * model->nmocap);
   userdata_.resize(model->nuserdata);
 }
@@ -45,7 +45,7 @@ void State::Set(const mjModel* model, const mjData* data) {
   if (model && data) {
     const std::unique_lock<std::shared_mutex> lock(mtx_);
 
-    state_.resize(model->nq + model->nv + model->na);
+    state_.resize(model->nq + model->nv + model->na*3);
     mocap_.resize(7 * model->nmocap);
 
     // state
