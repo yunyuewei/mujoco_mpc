@@ -53,7 +53,7 @@ void HierarchicalPDPlanner::Initialize(mjModel* model, const Task& task) {
   this->task = &task;
 
   // sampling noise std
-  noise_exploration[0] = GetNumberOrDefault(0.1, model, "sampling_exploration");
+  noise_exploration[0] = GetNumberOrDefault(0.05, model, "sampling_exploration");
 
   // optional second std (defaults to 0)
   int se_id = mj_name2id(model, mjOBJ_NUMERIC, "sampling_exploration");
@@ -65,7 +65,7 @@ void HierarchicalPDPlanner::Initialize(mjModel* model, const Task& task) {
   // set number of trajectories to rollout
   num_trajectory_ = GetNumberOrDefault(10, model, "sampling_trajectories");
 
-  interpolation_ = GetNumberOrDefault(SplineInterpolation::kCubicSpline, model,
+  interpolation_ = GetNumberOrDefault(SplineInterpolation::kZeroSpline, model,
                                       "sampling_representation");
   sliding_plan_ = GetNumberOrDefault(0, model, "sampling_sliding_plan");
 
@@ -80,7 +80,7 @@ void HierarchicalPDPlanner::Initialize(mjModel* model, const Task& task) {
 // allocate memory
 void HierarchicalPDPlanner::Allocate() {
   // initial state
-  int num_state = model->nq + model->nv + model->na;
+  int num_state = model->nq + model->nv + model->na + 2*model->nu;
 
   // state
   state.resize(num_state);
@@ -94,8 +94,8 @@ void HierarchicalPDPlanner::Allocate() {
   plan_scratch = TimeSpline(/*dim=*/policy.dim_high_level_action);
 
   // noise
+  // noise.resize(kMaxTrajectory * (model->nu * kMaxTrajectoryHorizon));
   noise.resize(kMaxTrajectory * (model->nu * kMaxTrajectoryHorizon));
-
   // trajectory and parameters
   winner = -1;
   for (int i = 0; i < kMaxTrajectory; i++) {
@@ -186,7 +186,7 @@ int HierarchicalPDPlanner::OptimizePolicyCandidates(int ncandidates, int horizon
       trajectory_order.end(), [trajectory = trajectory](int a, int b) {
         return trajectory[a].total_return < trajectory[b].total_return;
       });
-
+  
   // stop timer
   rollouts_compute_time = GetDuration(rollouts_start);
 
@@ -206,6 +206,7 @@ void HierarchicalPDPlanner::SyncPolicyData(HierarchicalPDPolicy policy, mjData* 
   mju_copy(policy.data_copy->qpos, src->qpos, model->nq);
   mju_copy(policy.data_copy->qvel, src->qvel, model->nv);
   mju_copy(policy.data_copy->act,  src->act,  model->na);
+  
 
   // // copy mocap body pose and userdata
   // mju_copy(policy.data_copy->mocap_pos,  src->mocap_pos,  3*model->nmocap);
@@ -241,8 +242,12 @@ void HierarchicalPDPlanner::SyncPolicyState(HierarchicalPDPolicy policy, const d
   policy.data_copy->time = time;
 
   mju_copy(policy.data_copy->qpos, src, model->nq);
-  mju_copy(policy.data_copy->qvel, src+ model->nq, model->nv);
-  mju_copy(policy.data_copy->act,  src+ model->nq + model->nv,  model->na);
+  mju_copy(policy.data_copy->qvel, src + model->nq, model->nv);
+  mju_copy(policy.data_copy->act,  src + model->nq + model->nv,  model->na);
+  mju_copy(policy.data_copy->actuator_length, src + model->nq + model->nv + model->na, model->nu);
+  mju_copy(policy.data_copy->actuator_velocity, src + model->nq + model->nv + model->na + model->nu, model->nu);
+  
+
   // mj_forward(model, policy.data_copy);
   // // copy mocap body pose and userdata
   // mju_copy(policy.data_copy->mocap_pos,  src->mocap_pos,  3*model->nmocap);
@@ -257,9 +262,11 @@ void HierarchicalPDPlanner::SyncPolicyState(HierarchicalPDPolicy policy, const d
   // copy simulation state
   policy.data_copy2->time = time;
   mju_copy(policy.data_copy2->qpos, src, model->nq);
-  mju_copy(policy.data_copy2->qvel, src+ model->nq, model->nv);
-  mju_copy(policy.data_copy2->act,  src+ model->nq + model->nv,  model->na);
-  mj_forward(model, policy.data_copy2);
+  mju_copy(policy.data_copy2->qvel, src + model->nq, model->nv);
+  mju_copy(policy.data_copy2->act,  src + model->nq + model->nv,  model->na);
+  mju_copy(policy.data_copy2->actuator_length, src + model->nq + model->nv + model->na, model->nu);
+  mju_copy(policy.data_copy2->actuator_velocity, src + model->nq + model->nv + model->na + model->nu, model->nu);
+  // mj_forward(model, policy.data_copy2);
 
 
 }
@@ -271,6 +278,8 @@ void HierarchicalPDPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
   // std::cout << "UpdateNominalPolicy" << std::endl;
   this->UpdateNominalPolicy(horizon);
 
+  // double act_current = policy.plan.NodeAt(0).values()[6];
+  // std::cout<<"current policy "<<" "<<act_current<<std::endl;
  
   OptimizePolicyCandidates(1, horizon, pool);
   
@@ -358,8 +367,11 @@ void HierarchicalPDPlanner::ActionFromPolicy(double* action, const double* state
 
     // std::cout<<"pos and vel state"<<qvel2.maxCoeff()<<" "<<qvel2.minCoeff()<<" "<<qpos2.maxCoeff()<<" "<<qpos2.minCoeff()<<std::endl;
 
-
+    // std::cout<<"time "<<time<<std::endl;
+    // double act_winner = candidate_policy[winner].plan.NodeAt(0).values()[6];
+    
     SyncPolicyState(policy, state, time);
+
     // SyncPolicyData(policy, data_[0].get());
     policy.HierarchicalAction(action, data_[0].get());
   }
@@ -427,12 +439,17 @@ void HierarchicalPDPlanner::UpdateNominalPolicy(int horizon) {
     plan_scratch.Reserve(num_spline_points);
     // std::cout<<"update nominal policy"<<std::endl;
     // get spline points
+    // for (int t = 0; t < num_spline_points; t++) {
+    //   double act_current = candidate_policy[winner].plan.NodeAt(t).values()[6];
+    //   std::cout<<"winner policy "<<t<<" "<<act_current<<std::endl;
+    // }
+   
     for (int t = 0; t < num_spline_points; t++) {
       //TODO: double check this part
       TimeSpline::Node node = plan_scratch.AddNode(nominal_time);
       candidate_policy[winner].Action(node.values().data(), /*state=*/nullptr,
                                       nominal_time);
-
+      
       // std::cout<<"action "<<t<<std::endl;
       // std::cout<<"winner "<<winner<<std::endl;
       // candidate_policy[winner].data_copy = mj_copyData(candidate_policy[winner].data_copy, model, data_[0].get());
@@ -472,8 +489,8 @@ void HierarchicalPDPlanner::AddNoiseToPolicy(double start_time, int i) {
       double scale = 0.5 * (model->jnt_range[2 * k + 1] -
                             model->jnt_range[2 * k]);
       for (int k = 0; k < policy.dim_high_level_action; k++) {
-        if (scale > 3.14*2) {
-          scale = 3.14*2;
+        if (scale > 1.57) {
+          scale = 1.57;
         }
       }
       double noise = absl::Gaussian<double>(gen_, 0.0, scale * std);
@@ -500,16 +517,19 @@ void HierarchicalPDPlanner::Rollouts(int num_trajectory, int horizon,
                    &state = this->state, &time = this->time,
                    &mocap = this->mocap, &userdata = this->userdata, horizon,
                    i]() {
-      // copy nominal policy
-      {
-        const std::shared_lock<std::shared_mutex> lock(s.mtx_);
-        s.candidate_policy[i].CopyFrom(s.policy, s.policy.num_spline_points);
-      }
       double total_ret = 1.0e6;
       while(total_ret >= 1.0e6) {
+        // copy nominal policy
+        {
+          const std::shared_lock<std::shared_mutex> lock(s.mtx_);
+          s.candidate_policy[i].CopyFrom(s.policy, s.policy.num_spline_points);
+        }
+      
         // sample noise policy
         // std::cout<<"before AddNoiseToPolicy"<<i<<std::endl;
         if (i != 0) s.AddNoiseToPolicy(time, i);
+        // double act_current = s.candidate_policy[i].plan.NodeAt(0).values()[6];
+        // std::cout<<"candidate policy "<<" "<<act_current<<std::endl;
         // std::cout<<"after AddNoiseToPolicy"<<i<<std::endl;
         // ----- rollout sample policy ----- //
 
@@ -699,8 +719,13 @@ void HierarchicalPDPlanner::CopyCandidateToPolicy(int candidate) {
   {
     const std::shared_lock<std::shared_mutex> lock(mtx_);
     previous_policy = policy;
+    // std::cout<<"copy dim "<<candidate_policy[winner].plan.Dim()<<" "<<policy.plan.Dim()<<std::endl;
     // policy = candidate_policy[winner];
+    
     policy.CopyFrom(candidate_policy[winner], policy.num_spline_points);
+    // double act_winner = candidate_policy[winner].plan.NodeAt(0).values()[6];
+    // double act_current = policy.plan.NodeAt(0).values()[6];
+    // std::cout<<"copy "<<act_winner<<" "<<act_current<<std::endl;
   }
 }
 }  // namespace mjpc

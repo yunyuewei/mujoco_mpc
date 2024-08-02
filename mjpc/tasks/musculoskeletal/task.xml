@@ -16,17 +16,17 @@
 
 
 
-  <size njmax="80000" nconmax="40000"/>
-  <!-- <size memory="40000K"/> -->
+  <!-- <size njmax="8000" nconmax="4000"/> -->
+  <size memory="4000K"/>
   <custom>
     <!-- agent -->
     <numeric name="agent_planner" data="0" />
     <numeric name="agent_horizon" data="0.5" />
-    <numeric name="agent_timestep" data="0.005" />
-    <numeric name="sampling_spline_points" data="3 1 10" />
-    <numeric name="sampling_exploration" data="0.05" />
+    <numeric name="agent_timestep" data="0.0025" />
+    <numeric name="sampling_spline_points" data="1 1 10" />
+    <!-- <numeric name="sampling_exploration" data="0.1" /> -->
     <numeric name="gradient_spline_points" data="5" />
-    <numeric name="residual_Height Goal" data="1.587 0.0 1.6" />
+    <numeric name="residual_Height Goal" data="1.5 0.0 1.6" />
     <!-- <numeric name="residual_Height Goal" data="1.587 0.0 1.6" /> -->
   </custom>
 
@@ -42,7 +42,7 @@
     <user name="Height" dim="1" user="6 100.0 0.0 100.0 0.1" />
     <user name="Balance" dim="1" user="6 50.0 0.0 100.0 0.1" />
     <user name="Balance_head" dim="1" user="6 50.0 0.0 100.0 0.1" />
-    <user name="Balance_head_pelvis" dim="1" user="6 50.0 0.0 100.0 0.1" />
+    <user name="Balance_head_pelvis" dim="1" user="6 0.0 0.0 100.0 0.1" />
     <user name="CoM Vel." dim="2" user="0 10.0 0.0 100.0" />
     
     <user name="Joint Vel." dim="85" user="0 0.01 0.0 0.1" />

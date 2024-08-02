@@ -30,14 +30,14 @@
 #include "mjpc/planners/hierarchical_pd/planner.h"
 namespace mjpc {
 const char kPlannerNames[] =
-    "Sampling\n"
+    // "Sampling\n"
     // "Hierarchical Sampling\n"
-    "Hierarchical PD";
+    "Hierarchical PD\n";
     // "Gradient\n"
     // "iLQG\n"
     // "iLQS\n"
     // "Robust Sampling\n"
-    // "Cross Entropy\n"
+    // "Cross Entropy\n";
     // // // "Hierarchical Cross Entropy\n"
     // "Sample Gradient";
 
@@ -46,7 +46,7 @@ std::vector<std::unique_ptr<mjpc::Planner>> LoadPlanners() {
   // planners
   std::vector<std::unique_ptr<mjpc::Planner>> planners;
 
-  planners.emplace_back(new mjpc::SamplingPlanner);
+  // planners.emplace_back(new mjpc::SamplingPlanner);
   // planners.emplace_back(new mjpc::HierarchicalSamplingPlanner);
   planners.emplace_back(new mjpc::HierarchicalPDPlanner);
   // planners.emplace_back(new mjpc::GradientPlanner);

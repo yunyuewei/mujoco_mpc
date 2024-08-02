@@ -113,10 +113,10 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   
   // TODO: too slow for this computation
   // ----- head-feet horizontal distance be 0 ----- //
-  double* com_position_head = SensorByName(model, data, "head_subtreecom");
+  // double* com_position_head = SensorByName(model, data, "head_subtreecom");
   // double* com_velocity_head = SensorByName(model, data, "head_subtreelinvel");
   // double kFallTime_head = 0.2;
-  double capture_point_head[3] = {com_position_head[0], com_position_head[1], com_position_head[2]};
+  // double capture_point_head[3] = {com_position_head[0], com_position_head[1], com_position_head[2]};
   // mju_addToScl3(capture_point_head, com_velocity_head, kFallTime_head);
 
   // // average feet xy position
@@ -135,11 +135,12 @@ void Musculoskeletal::ResidualFn::Residual(const mjModel* model, const mjData* d
   residual[counter++] = 0;
 
 
-  // ----- head-pelvis horizontal distance be 0 ----- //
-  double pelvis_xy[2] = {com_position[0], com_position[1]};
-  mju_subFrom(pelvis_xy, capture_point_head, 2);
-  double com_distance_head_pelvis = mju_norm(pelvis_xy, 2);
-  residual[counter++] = com_distance_head_pelvis;
+  // // ----- head-pelvis horizontal distance be 0 ----- //
+  // double pelvis_xy[2] = {com_position[0], com_position[1]};
+  // mju_subFrom(pelvis_xy, capture_point_head, 2);
+  // double com_distance_head_pelvis = mju_norm(pelvis_xy, 2);
+  // residual[counter++] = com_distance_head_pelvis;
+  residual[counter++] = 0;
 
 
   // ----- COM xy velocity should be 0 ----- //

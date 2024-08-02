@@ -77,8 +77,8 @@ void HierarchicalPDPolicy::Action(double* action, const double* state,
   CHECK(action != nullptr);
   
   //TODO: sample high-level action and then convert to low-level action
-  std::vector<double> high_level_action(dim_high_level_action);
-  plan.Sample(time, absl::MakeSpan(&high_level_action[0], dim_high_level_action));
+  // std::vector<double> high_level_action(dim_high_level_action);
+  plan.Sample(time, absl::MakeSpan(&action[0], dim_high_level_action));
   // HighToLowAction(&high_level_action[0], action, );
   // // Clamp controls
 //   Clamp(action, model->actuator_ctrlrange, model->nu);
@@ -105,71 +105,91 @@ void HierarchicalPDPolicy::HierarchicalAction(double* action, mjData* data) cons
 
 void HierarchicalPDPolicy::HighToLowAction(double* high_level_action, double* action, mjData* data) const {
   CHECK(action != nullptr);
-
-  absl::BitGen gen_;
+  // absl::BitGen gen_;
 
   // Clamp(high_level_action, model->jnt_range, model->nq);
   // Eigen::VectorXd high_act_vec = Eigen::Map<Eigen::VectorXd>(high_level_action, model->nv);
   // std::cout<<"high level action "<<high_act_vec.maxCoeff()<<" "<<high_act_vec.minCoeff()<<std::endl;
 
-  // for (int i = 0; i < model->nv; i++) {
-  //   // double noise = absl::Gaussian<double>(gen_, 0.0, 0.5);
-  //   // high_level_action[i] = noise;
-  //   // if (high_level_action[i] > 5) {
-  //   //   high_level_action[i] = 5;
-  //   // }
-  //   // if (high_level_action[i] < -5) {
-  //   //   high_level_action[i] = -5;
-  //   // }
-  //   // if (i==6){
-  //   //   high_level_action[i] = 2;
-  //   // }
-  // }
-  Clamp(high_level_action, model->jnt_range, model->nq);
+  // position
+  high_level_action[6] = 2;
+  // high_level_action[56] = 3.14;
+  // high_level_action[76] = 3.14;
 
-  // double* temp_qpos = data->qpos;
-  // double jnt_err = 0;
-  // double length_sum = 0;
-  // mj_step1(model, data_copy); 
-  // for (int k = 0; k < model->nq; k++) {
-  //   // std::cout<<"before joint "<<k<<": ";
-  //   // std::cout<<k<<" "<<temp_qpos[k]<<" "<<high_level_action[k]<<" "<<model->jnt_range[k*2]<<" "<<model->jnt_range[k*2+1]<<std::endl;
-  //   // std::cout<<k<<" "<<data->qpos[k]<<" "<<data_copy->qpos[k]<<std::endl;
-  //   // std::cout<<k<<" "<<data->actuator_length[k]<<" "<<data_copy->actuator_length[k]<<std::endl;
-  //   jnt_err += data->actuator_length[k] - data_copy->actuator_length[k];
-  //   length_sum += data->actuator_length[k];
-  // //   // std::cout<<k<<" "<<temp_qpos[k]<<" "<<data_copy->qpos[k]<<std::endl;
-  // //   // std::cout<<temp_qpos[k]-high_level_action[k]<<" ";
-  // //   // jnt_err += mju_abs(temp_qpos[k]-high_level_action[k]);
-  // //   // break;
-  // }
-  // std::cout<<"before joint "<<data->time<<" "<<jnt_err<<" "<<length_sum<<std::endl;
+  // high_level_action[56] = 1.57;
+  // high_level_action[76] = 1.57;
 
-  Eigen::VectorXd action_vec = get_ctrl(high_level_action);
   
+
+  high_level_action[56] = 2;
+  high_level_action[76] = 2;
+
+  // restrict the next position given the current position
+  // for (int i=0; i<model->nv; i++) {
+  //   // double pos_diff = high_level_action[i] - data->qpos[i];
+  //   // if (pos_diff > 3*model->opt.timestep) {
+  //   //   high_level_action[i] = data->qpos[i] + 3*model->opt.timestep;
+  //   // }
+  //   // if (pos_diff < -3*model->opt.timestep) {
+  //   //   high_level_action[i] = data->qpos[i] - 3*model->opt.timestep;
+  //   // }
+  //   // if (i < 6) {
+  //     high_level_action[i] = data_copy->qpos[i];
+  //   // }
+  //   // high_level_action[i] = data_copy->qpos[i];
+  // }
+
+  // assign current qpos to excluded joint
+  for (int i = 0; i < excludeList.size(); ++i) {
+        high_level_action[excludeList[i]] = data_copy->qpos[excludeList[i]];
+  }
+  // if (data_copy->time > 100){
+  //   std::cout<<" action "<<high_level_action[6]<<std::endl;
+  // }
+  
+
+  
+
+  Clamp(high_level_action, model->jnt_range, model->nq);
+  Eigen::VectorXd action_vec = get_ctrl(high_level_action);
+
+  // velocity
+  // for (int i=0; i<model->nv; i++) {
+  //   high_level_action[i] = -data_copy->qpos[i]/model->opt.timestep;
+  // }
+  // // high_level_action[6] = 2;
+  // high_level_action[56] = (3.14-data_copy->qpos[56])/model->opt.timestep;
+  // high_level_action[76] = (3.14-data_copy->qpos[76])/model->opt.timestep;
+  // // high_level_action[56] = 3;
+  // // high_level_action[56] = 3;
+  // for (int i=0; i<model->nv; i++) {
+  //   if (high_level_action[i] > 100) {
+  //     high_level_action[i] = 100;
+  //   }
+  //   if (high_level_action[i] < -100) {
+  //     high_level_action[i] = -1;
+  //   }
+  // }
+
+  // Eigen::VectorXd action_vec = get_ctrl2(high_level_action);
+  
+
+
+  
+  
+  
+  // std::cout<<"get ctrl used "<<(double)(clock() - start)/CLOCKS_PER_SEC<<std::endl;
+
   for (int k = 0; k < model->nu; k++) {
-      // double noise = absl::Gaussian<double>(gen_, 0.0, 0.005);
-      // if (action_vec(k) > 0.5) {
-      //   action_vec(k) = 0.5;
-      // }
       action[k] =action_vec(k);
     }
-  
-  Clamp(action, model->actuator_ctrlrange, model->nu);
-  // std::cout<<"finish ctrl"<<Eigen::Map<Eigen::VectorXd>(action, model->nu) <<std::endl;
-  // mju_error_i(
-  //       "run end here", 0
-  //       );
 
 }
 
-// get control by position
-Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
-  // double qfrc_scaler = 1;
-  // double qvel_scaler = 1;
-  // time_t start = clock();
-  // Compute the control needed to reach the target position in the next mujoco step
-  Eigen::VectorXd act0 = Eigen::Map<Eigen::VectorXd>(data_copy2->act, model->nu);
+// get control from mj data
+Eigen::VectorXd HierarchicalPDPolicy::get_mus_ctrl() const {
+
+  Eigen::VectorXd act0 = Eigen::Map<Eigen::VectorXd>(data_copy->act, model->nu);
   Eigen::VectorXd one_vec = Eigen::VectorXd::Ones(model->nu);
   // Eigen::VectorXd ctrl0 = Eigen::Map<Eigen::VectorXd>(data_copy2->ctrl, model->nu);
   // std::cout<<"act "<< act0 <<std::endl;
@@ -185,40 +205,12 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   Eigen::VectorXd tau1 = ((tA - tD) * 1.875).array() / tausmooth.array();
   Eigen::VectorXd tau2 = (tA + tD) * 0.5;
 
-  // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<act0(i)<<" "<<tA(i)<<" "<<tD(i)<<" "<<tau1(i)<<" "<<tau2(i)<<std::endl;
-  // }
-  // std::cout<<"act0 "<<act0<<std::endl;
-  // std::cout<<"tau1 "<<tau1<<std::endl;
-  
-  // ---- gain, bias, and moment computation
-  // mjData* data_copy = mj_copyData(NULL, model, data);
-  // data_copy2->qpos = target_qpos;
 
-  //avoid too large qpos
-  // double max_qpos_change = 
-  // for (int i=0; i<model->nq; i++) {
-  //   if (target_qpos[i] > model->jnt_range[2*i+1]) {
-  //     target_qpos[i] = model->jnt_range[2*i+1];
-  //   }
-  //   if (target_qpos[i] < model->jnt_range[2*i]) {
-  //     target_qpos[i] = model->jnt_range[2*i];
-  //   }
-  // }
-  
-  mju_copy(data_copy2->qvel, target_qpos, model->nq);
-  mju_subFrom(data_copy2->qvel, data_copy2->qpos, model->nq);
-  mju_scl(data_copy2->qvel, data_copy2->qvel, 1/model->opt.timestep, model->nq);
-  mju_copy(data_copy2->qpos, target_qpos, model->nq);
-
-
-  // data_copy->qvel= qvel; 
-  // TODO: avoid mj step
-  mj_step1(model, data_copy); 
-  mj_step1(model, data_copy2);// gain, bias, and moment depend on qpos and qvel
   Eigen::VectorXd gain(model->nu);
   Eigen::VectorXd bias(model->nu);
+  Eigen::VectorXd force0(model->nu);
   
+  Eigen::VectorXd len_ranges(model->nu);
   for (int idx_actuator = 0; idx_actuator < model->nu; ++idx_actuator) {
     double length = data_copy2->actuator_length[idx_actuator];
     mjtNum* lengthrange = (mjtNum*) mju_malloc(2 * sizeof(mjtNum));
@@ -239,13 +231,15 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
       prmg[j] = model->actuator_gainprm[10*idx_actuator+j];
     // std::cout<<"gainprm "<<j<<" "<<prmg[j]<<std::endl;
     }
+    
+    len_ranges(idx_actuator) = lengthrange[1] - lengthrange[0];
     // std::cout<<std::endl;
     bias[idx_actuator] = mju_muscleBias(length, lengthrange, acc0, prmb);
     double g = mju_muscleGain(length, velocity, lengthrange, acc0, prmg);
-    if (g > -1) {
+    if (g >= -1) {
       g = -1;
     }
-   
+    force0(idx_actuator) = prmg[2];
     gain[idx_actuator] = g;
 
     //delete pointers
@@ -255,10 +249,11 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   }
 
   // PD control
-
-  double kp = 2;
-  double kd = 0.8;
-
+  double kp = 50;
+  double kd = 10;
+  // double kp = 0.05;
+  // double kd = 0.01;
+  // std::cout<<"force0 "<<force0<<std::endl;
   // muscle force = max(0, kp*(target_length-current_length)-kd*qvel)
   Eigen::VectorXd target_muscle_length = Eigen::Map<Eigen::VectorXd>(data_copy2->actuator_length, model->nu);
   Eigen::VectorXd current_muscle_length = Eigen::Map<Eigen::VectorXd>(data_copy->actuator_length, model->nu);
@@ -268,15 +263,20 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   Eigen::VectorXd length_diff = target_muscle_length - current_muscle_length;
   // std::cout<<"muscle len diff "<<length_diff.maxCoeff()<<" "<<length_diff.minCoeff()<<std::endl;
 
-  Eigen::VectorXd muscle_force = kp*(target_muscle_length-current_muscle_length) - kd * muscle_velocity;
+  Eigen::VectorXd muscle_force = kp*(target_muscle_length-current_muscle_length).array()/len_ranges.array() - kd * muscle_velocity.array()/len_ranges.array();
+  Eigen::VectorXd length0 = Eigen::Map<Eigen::VectorXd>(model->actuator_length0, model->nu);
+  
   for (int i=0; i<model->nu; i++) {
-    if (muscle_force[i] > 0) {
-      muscle_force[i] = 0;
+    if (muscle_force(i) > 0) {
+      muscle_force(i) = 0;
     }
-    
+    else {
+      // muscle_force(i) = muscle_force(i)*force0(i);
+      muscle_force(i) = muscle_force(i);
+    }
   }
   // std::cout<<"muscle force "<<muscle_force.maxCoeff()<<" "<<muscle_force.minCoeff()<<std::endl;
-  // std::cout<<"muscle force "<<muscle_force.maxCoeff()<<" "<<muscle_force.minCoeff()<<std::endl;
+  // std::cout<<"muscle force "<<muscle_force.minCoeff()<<" "<<muscle_force(79)<<std::endl;
   
 
   Eigen::VectorXd target_act = (muscle_force.array()-bias.array()) / gain.array();
@@ -302,18 +302,45 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
       lb = b1[i];
     }
     if (target_act[i] < lb) {
-      target_act[i] = -lb;
+      target_act[i] = lb;
     }
     if (target_act[i] > ub) {
       target_act[i] = ub;
     }
+    // if (target_act[i] < 0) {
+    //   target_act[i] = 0;
+    // }
+    // if (target_act[i] > 1) {
+    //   target_act[i] = 1;
+    // }
   }
   // std::cout<<"gain "<<gain<<std::endl;
   // std::cout<<"bias "<<bias<<std::endl;
   // std::cout<<"target_act "<<target_act<<std::endl;
+  // std::cout<<"time "<<data_copy->time<<std::endl;
+  // int low_track = 79;
+  // int high_track = 79;
+
+  // int low_track = 565;
+  // int high_track = 578;
+  // for (int i=0; i<model->nu; i++) {
+  //   if (i<low_track || i>high_track 
+  //   // || data_copy->time == 0
+  //   ) {
+  //     continue;
+  //   }
+  //   // std::cout<<"muscle "<<i<<": "<<gain(i)<<" "<<bias(i)<<" "<<target_act(i)<<" "<<b1(i)<<" "<<b2(i)<<" "<<length_diff(i)<<" "<<data_copy->qpos[56]<<" "<<data_copy2->qpos[56]<<std::endl;
+  //   std::cout<<"muscle "<<i<<": "<<" "<<target_muscle_length(i)<<" "<<current_muscle_length(i)<<" "<<target_muscle_length(i)-current_muscle_length(i)<<" "<<length_diff(i)<<" "<<muscle_velocity(i)<<" "<<data_copy->qpos[56]<<" "<<data_copy2->qpos[56]<<std::endl;
+  // }
 
   // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<gain(i)<<" "<<bias(i)<<" "<<target_act(i)<<" "<<length_diff(i)<<std::endl;
+  //   if (i<low_track || i>high_track 
+  //   // || data_copy->time == 0
+  //   ) {
+  //     continue;
+  //   }
+  //   // std::cout<<"muscle "<<i<<": "<<gain(i)<<" "<<bias(i)<<" "<<target_act(i)<<" "<<b1(i)<<" "<<b2(i)<<" "<<length_diff(i)<<" "<<data_copy->qpos[56]<<" "<<data_copy2->qpos[56]<<std::endl;
+  //   std::cout<<"act "<<i<<": "<<gain(i)<<" "<<bias(i)<<" "<<act0(i)<<" "<<target_act(i)<<" "<<b1(i)<<" "<<b2(i)<<" "<<muscle_force(i)<<std::endl;
   // }
   
   // std::cout<<"t2 "<<tau2<<std::endl;
@@ -328,6 +355,7 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   Eigen::VectorXd denominator = act0.array() * tau1.array() +
                                 ts * one_vec.array() -
                                 target_act.array() * tau1.array();
+  
   // std::cout<<"denominator "<<denominator<<std::endl;
   // for (int i=0; i<model->nu; i++) {
   //   std::cout<<"muscle "<<i<<": "<<nominator(i)<<" "<<denominator(i)<<" "<<target_act(i)<<" "<<tau2(i)<<std::endl;
@@ -349,7 +377,16 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   
   Eigen::VectorXd ctrl_vec = nominator.array() / (denominator.array());
 
-  // Eigen::VectorXd ctrl_vec = Eigen::VectorXd::Zero(model->nu);
+
+  // for (int i=0; i<model->nu; i++) {
+  //   if (i<low_track || i>high_track 
+  //   // || data_copy->time == 0
+  //   ) {
+  //     continue;
+  //   }
+  //   std::cout<<"control "<<i<<": "<<nominator(i)<<" "<<denominator(i)<<" "<<target_act(i)<<" "<<ctrl_vec(i)<<std::endl;
+  // }
+  
 
 
 
@@ -365,7 +402,16 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
 
   // double* ctrl = ctrl_vec.data();
   // std::cout<<"control "<<ctrl_vec.sum()<<std::endl;
-  // std::cout<<"control "<<ctrl_vec.sum()<<std::endl;
+  for (int i = 0; i < model->nu; i++) {
+    // ctrl_vec[i] = std::clamp(ctrl_vec[i], 0.0, 1.0);
+    if (ctrl_vec(i) > 1) {
+      ctrl_vec(i) = 1;
+    }
+    if (ctrl_vec(i) < 0) {
+      ctrl_vec(i) = 0;
+    }
+  }
+  // std::cout<<"control "<<data_copy->time<<" "<<ctrl_vec.sum()<<std::endl;
   
   // for (int i = 0; i < model->nu; i++) {
   //   std::cout<<"ctrl "<<i<<" "<<ctrl[i]<<std::endl;
@@ -374,207 +420,30 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
   return ctrl_vec;
 }
 
+// get control by position
+Eigen::VectorXd HierarchicalPDPolicy::get_ctrl(double* target_qpos) const{
+  mju_copy(data_copy2->qvel, target_qpos, model->nq);
+  mju_subFrom(data_copy2->qvel, data_copy2->qpos, model->nq);
+  mju_scl(data_copy2->qvel, data_copy2->qvel, 1/model->opt.timestep, model->nq);
+  mju_copy(data_copy2->qpos, target_qpos, model->nq);
+  mj_step1(model, data_copy2);// gain, bias, and moment depend on qpos and qvel
+  Eigen::VectorXd ctrl_vec = get_mus_ctrl();
+  return ctrl_vec;
+}
+
 
 //get control by velocity
 Eigen::VectorXd HierarchicalPDPolicy::get_ctrl2(double* target_qvel) const{
-  // double qfrc_scaler = 1;
-  // double qvel_scaler = 1;
-  // time_t start = clock();
-  // Compute the control needed to reach the target position in the next mujoco step
-  Eigen::VectorXd act0 = Eigen::Map<Eigen::VectorXd>(data_copy2->act, model->nu);
-  Eigen::VectorXd one_vec = Eigen::VectorXd::Ones(model->nu);
-  // Eigen::VectorXd ctrl0 = Eigen::Map<Eigen::VectorXd>(data_copy2->ctrl, model->nu);
-  // std::cout<<"act "<< act0 <<std::endl;
-  // std::cout<<"ctrl0 "<< ctrl0 <<std::endl;
-  
-  double ts = model->opt.timestep;
-  // for (int i=0; i<model->nu; i++) {
-  //   act0[i] = (double)i/model->nu;
-  // }
-  Eigen::VectorXd tA = 0.01 * (0.5*one_vec.array() + 1.5 * act0.array());
-  Eigen::VectorXd tD = 0.04 / (0.5*one_vec.array() + 1.5 * act0.array());
-  Eigen::VectorXd tausmooth = 5 * one_vec;
-  Eigen::VectorXd tau1 = ((tA - tD) * 1.875).array() / tausmooth.array();
-  Eigen::VectorXd tau2 = (tA + tD) * 0.5;
 
-  // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<act0(i)<<" "<<tA(i)<<" "<<tD(i)<<" "<<tau1(i)<<" "<<tau2(i)<<std::endl;
-  // }
-  // std::cout<<"act0 "<<act0<<std::endl;
-  // std::cout<<"tau1 "<<tau1<<std::endl;
-  
-  // ---- gain, bias, and moment computation
-  // mjData* data_copy = mj_copyData(NULL, model, data);
-  // data_copy2->qpos = target_qpos;
-  
+
+
   mju_copy(data_copy2->qvel, target_qvel, model->nq);
+  // mju_scl(data_copy2->qvel, data_copy2->qvel, 1/model->opt.timestep, model->nq);
   mju_scl(data_copy2->qpos, data_copy2->qvel, model->opt.timestep, model->nq);
   mju_addTo(data_copy2->qpos, data_copy->qpos, model->nq);
-  // Clamp(data_copy2->qpos, model->jnt_range, model->nq);
-
-  // mju_subFrom(data_copy2->qvel, data_copy2->qpos, model->nq);
-  // mju_scl(data_copy2->qvel, data_copy2->qvel, 1/model->opt.timestep, model->nq);
-  // mju_copy(data_copy2->qpos, target_qpos, model->nq);
-  // mju_copy(data_copy2->qfrc_applied, target_qfrc, model->nu);
-  // mju_zero(data_copy2->ctrl, model->nu);
-  // data_copy->qvel= qvel; 
-  // TODO: avoid mj step
-  mj_step1(model, data_copy); 
+  Clamp(data_copy2->qpos, model->jnt_range, model->nq);
   mj_step1(model, data_copy2);// gain, bias, and moment depend on qpos and qvel
-  Eigen::VectorXd gain(model->nu);
-  Eigen::VectorXd bias(model->nu);
-  
-  for (int idx_actuator = 0; idx_actuator < model->nu; ++idx_actuator) {
-    double length = data_copy2->actuator_length[idx_actuator];
-    mjtNum* lengthrange = (mjtNum*) mju_malloc(2 * sizeof(mjtNum));
-    lengthrange[0] = model->actuator_lengthrange[2*idx_actuator];
-    lengthrange[1] = model->actuator_lengthrange[2*idx_actuator+1];
-    double velocity = data_copy2->actuator_velocity[idx_actuator];
-    double acc0 = model->actuator_acc0[idx_actuator];
-    mjtNum* prmb = (mjtNum*) mju_malloc(9 * sizeof(mjtNum));
-    // Eigen::VectorXd prmb(9);
-    for (int j = 0; j<9; j++) {
-      prmb[j] = model->actuator_biasprm[10*idx_actuator+j];
-    // std::cout<<"biasprm "<<j<<" "<<prmb[j]<<std::endl;
-    }
-    // std::cout<<std::endl;
-    // Eigen::VectorXd prmg(9);
-    mjtNum* prmg = (mjtNum*) mju_malloc(9 * sizeof(mjtNum));
-    for (int j = 0; j<9; j++) {
-      prmg[j] = model->actuator_gainprm[10*idx_actuator+j];
-    // std::cout<<"gainprm "<<j<<" "<<prmg[j]<<std::endl;
-    }
-    // std::cout<<std::endl;
-    bias[idx_actuator] = mju_muscleBias(length, lengthrange, acc0, prmb);
-    double g = mju_muscleGain(length, velocity, lengthrange, acc0, prmg);
-    if (g > -1) {
-      g = -1;
-    }
-   
-    gain[idx_actuator] = g;
-
-    //delete pointers
-    delete lengthrange;
-    delete prmb;
-    delete prmg;
-  }
-
-  // PD control
-
-  double kp = 10;
-  double kd = 1;
-
-  // muscle force = max(0, kp*(target_length-current_length)-kd*qvel)
-  Eigen::VectorXd target_muscle_length = Eigen::Map<Eigen::VectorXd>(data_copy2->actuator_length, model->nu);
-  Eigen::VectorXd current_muscle_length = Eigen::Map<Eigen::VectorXd>(data_copy->actuator_length, model->nu);
-  Eigen::VectorXd muscle_velocity = Eigen::Map<Eigen::VectorXd>(data_copy->actuator_velocity, model->nu);
-  // std::cout<<"current muscle len "<<current_muscle_length.maxCoeff()<<" "<<current_muscle_length.minCoeff()<<std::endl;
-  Eigen::VectorXd length_diff = target_muscle_length - current_muscle_length;
-  // std::cout<<"muscle len diff "<<length_diff.maxCoeff()<<" "<<length_diff.minCoeff()<<std::endl;
-
-  Eigen::VectorXd muscle_force = kp*(target_muscle_length-current_muscle_length) - kd * muscle_velocity;
-  for (int i=0; i<model->nu; i++) {
-    if (muscle_force[i] > 0) {
-      muscle_force[i] = 0;
-    }
-    
-  }
-  // std::cout<<"muscle force "<<muscle_force.maxCoeff()<<" "<<muscle_force.minCoeff()<<std::endl;
-  // std::cout<<"muscle force "<<muscle_force.maxCoeff()<<" "<<muscle_force.minCoeff()<<std::endl;
-  
-
-  Eigen::VectorXd target_act = (muscle_force.array()-bias.array()) / gain.array();
-
-  Eigen::VectorXd b1 = act0.array() + (ts*(one_vec - act0)).array()  / (tau2 + tau1 * (one_vec - act0)).array();
-  Eigen::VectorXd b2 = act0.array() - act0.array() * ts / (tau2- tau1 * act0).array();
-
-  // std::cout<<"b1 "<<b1<<std::endl;
-  // std::cout<<"b2 "<<b2<<std::endl;
-  // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<act0(i)<<" "<<b1(i)<<" "<<b2(i)<<std::endl;
-  // }
-  
-
-  for (int i=0; i<model->nu; i++) {
-    double ub, lb;
-    if (b1[i] > b2[i]) {
-      ub = b1[i];
-      lb = b2[i];
-    }
-    else {
-      ub = b2[i];
-      lb = b1[i];
-    }
-    if (target_act[i] < lb) {
-      target_act[i] = -lb;
-    }
-    if (target_act[i] > ub) {
-      target_act[i] = ub;
-    }
-  }
-  // std::cout<<"gain "<<gain<<std::endl;
-  // std::cout<<"bias "<<bias<<std::endl;
-  // std::cout<<"target_act "<<target_act<<std::endl;
-
-  // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<gain(i)<<" "<<bias(i)<<" "<<target_act(i)<<" "<<length_diff(i)<<std::endl;
-  // }
-  
-  // std::cout<<"t2 "<<tau2<<std::endl;
-  Eigen::VectorXd nominator = act0.array() * act0.array() * tau1.array() -
-                              act0.array() * tau2.array() +
-                              ts * act0.array() -
-                              target_act.array() * act0.array() * tau1.array() +
-                              target_act.array() * tau2.array();
-  // std::cout<<"nominator "<<nominator<<std::endl;
-  
-
-  Eigen::VectorXd denominator = act0.array() * tau1.array() +
-                                ts * one_vec.array() -
-                                target_act.array() * tau1.array();
-  // std::cout<<"denominator "<<denominator<<std::endl;
-  // for (int i=0; i<model->nu; i++) {
-  //   std::cout<<"muscle "<<i<<": "<<nominator(i)<<" "<<denominator(i)<<" "<<target_act(i)<<" "<<tau2(i)<<std::endl;
-  // }
-  
-  // mju_error_i(
-  //     "run end here", 0
-  //     );
-  // for (int i=0; i<model->nu; i++) {
-  //   if (abs(denominator[i]) < 1e-6) {
-  //     if (denominator[i] < 0) {
-  //       denominator[i] = -1e-6;
-  //     }
-  //     else {
-  //     denominator[i] = 1e-6 ;
-  //     }
-  //   }
-  // }
-  
-  Eigen::VectorXd ctrl_vec = nominator.array() / (denominator.array());
-
-  // Eigen::VectorXd ctrl_vec = Eigen::VectorXd::Zero(model->nu);
-
-
-
-  // Eigen::VectorXd ctrl_vec = Eigen::VectorXd::Zero(model->nu);
-  // Eigen::VectorXd ctrl_vec = act_vec.array() / ((gain.array() * ts));
-
-  for (int i = 0; i < model->nu; i++) {
-    ctrl_vec[i] = std::clamp(ctrl_vec[i], 0.0, 1.0);
-  }
-  // return ctrl;
-
-  // std::cout<<AM.size()<<P.size()<<q.size()<<lb.size()<<x.size()<<ctrl2.size()<<std::endl;
-
-  // double* ctrl = ctrl_vec.data();
-  // std::cout<<"control "<<ctrl_vec.sum()<<std::endl;
-  std::cout<<"control "<<ctrl_vec.sum()<<std::endl;
-  
-  // for (int i = 0; i < model->nu; i++) {
-  //   std::cout<<"ctrl "<<i<<" "<<ctrl[i]<<std::endl;
-  // }
-  // std::cout<<"finish get ctrl"<<std::endl;
+  Eigen::VectorXd ctrl_vec = get_mus_ctrl();
   return ctrl_vec;
 }
 
@@ -584,6 +453,20 @@ Eigen::VectorXd HierarchicalPDPolicy::get_ctrl2(double* target_qvel) const{
 void HierarchicalPDPolicy::CopyFrom(const HierarchicalPDPolicy& policy, int horizon) {
   this->plan = policy.plan;
   num_spline_points = policy.num_spline_points;
+  // data_copy = mj_copyData(model, policy.data_copy);
+  // data_copy2 = mj_copyData(model, policy.data_copy2); 
+  mju_copy(data_copy->qpos, policy.data_copy->qpos, model->nq);
+  mju_copy(data_copy->qvel, policy.data_copy->qvel, model->nv);
+  mju_copy(data_copy->act,  policy.data_copy->act,  model->na);
+  mju_copy(data_copy->actuator_length, policy.data_copy->actuator_length, model->nu);
+  mju_copy(data_copy->actuator_velocity, policy.data_copy->actuator_velocity, model->nu);
+
+  mju_copy(data_copy2->qpos, policy.data_copy2->qpos, model->nq);
+  mju_copy(data_copy2->qvel, policy.data_copy2->qvel, model->nv);
+  mju_copy(data_copy2->act,  policy.data_copy2->act,  model->na);
+  mju_copy(data_copy2->actuator_length, policy.data_copy2->actuator_length, model->nu);
+  mju_copy(data_copy2->actuator_velocity, policy.data_copy2->actuator_velocity, model->nu);
+  
 }
 
 // copy parameters

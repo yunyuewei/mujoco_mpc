@@ -48,7 +48,7 @@ class State {
   void Set(const mjModel* model, const mjData* data);
   void Set(const mjModel* model, const double* qpos, const double* qvel,
            const double* act, const double* mocap_pos, const double* mocap_quat,
-           const double* userdata, double time);
+           const double* userdata, double time, const double* actuator_length, const double* actuator_velocity);
 
   // set qpos
   void SetPosition(const mjModel* model, const double* qpos);
@@ -68,6 +68,8 @@ class State {
 
   // set time
   void SetTime(const mjModel* model, double time);
+
+  void SetActuator(const mjModel* model, const double* actuator_length, const double* actuator_velocity);
 
   // copy into destination
   void CopyTo(double* dst_state, double* dst_mocap, double* dst_userdata,

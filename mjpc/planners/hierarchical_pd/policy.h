@@ -52,28 +52,16 @@ class HierarchicalPDPolicy : public Policy {
   // set action from higher level policy
   void HighToLowAction(double* high_level_action,  double* action, mjData* data) const;
 
-  // Solve a quadratic program
-  Eigen::VectorXd solve_qp(
-    Eigen::SparseMatrix<double> hessian, 
-    Eigen::VectorXd gradient, 
-    Eigen::SparseMatrix<double> constraintMatrix,
-    Eigen::VectorXd lowerBound, 
-    Eigen::VectorXd upperBound, 
-    Eigen::VectorXd initialGuess
-    ) const;
-  
-  //solve a linear program
-  Eigen::VectorXd linprog(Eigen::VectorXd c,
-                      Eigen::MatrixXd A,
-                      Eigen::VectorXd b,
-                      Eigen::VectorXd x0) const;
-
 
   // get qfrc
   double* get_qfrc(mjModel* model, double* target_qpos) const;
 
   // get control
+  //for target mjdata
+  Eigen::VectorXd get_mus_ctrl() const;
+  //by pos
   Eigen::VectorXd get_ctrl(double* target_pos) const;
+  //by vel
   Eigen::VectorXd get_ctrl2(double* target_qvel) const;
   // copy policy
   void CopyFrom(const HierarchicalPDPolicy& policy, int horizon);
@@ -88,18 +76,11 @@ class HierarchicalPDPolicy : public Policy {
   int num_spline_points;
   mjData* data_copy; //for inverse dynamics
   mjData* data_copy2; // for control compute
-  mjModel* model_copy;
 
   int dim_high_level_action;  // number of high-level actions  
   std::vector<double> high_level_actions;   // (horizon-1 x num_action)
 
-  //used in QP
-  Eigen::SparseMatrix<double> P;
-  Eigen::VectorXd q;
-
-
-  //used in LP
-  Eigen::VectorXd c;
+  std::vector<int> excludeList = {0, 1, 2, 3, 4, 5, 9, 10, 11, 13, 14, 18, 19, 20, 24, 25, 26, 28, 29, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 57, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 77, 83, 84};
   // Eigen::MatrixXd linearMatrix;
 
   // Eigen::SparseMatrix<double> linearMatrix;

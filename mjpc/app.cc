@@ -194,7 +194,7 @@ void EstimatorLoop(mj::Simulate& sim) {
         // estimator state to planner
         double* state = estimator->State();
         sim.agent->state.Set(m, state, state + m->nq, state + m->nq + m->nv,
-                             d->mocap_pos, d->mocap_quat, d->userdata, d->time);
+                             d->mocap_pos, d->mocap_quat, d->userdata, d->time, d->actuator_length, d->actuator_velocity);
 
         // wait (us)
         // TODO(taylor): confirm valid for slowdown

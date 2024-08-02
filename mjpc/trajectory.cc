@@ -94,6 +94,7 @@ void Trajectory::Rollout(
         policy,
     const Task* task, const mjModel* model, mjData* data, const double* state,
     double time, const double* mocap, const double* userdata, int steps) {
+  // std::cout<<"rollout1"<<std::endl;
   NoisyRollout(policy, task, model, data, state, time, mocap, userdata,
                /*xfrc_std=*/0, /*xfrc_rate=*/1, steps);
 }
@@ -103,6 +104,7 @@ void Trajectory::Rollout(
         policy,
     const Task* task, const mjModel* model, mjData* data, const double* state,
     double time, const double* mocap, const double* userdata, int steps) {
+  // std::cout<<"rollout2"<<std::endl;
   NoisyRollout(policy, task, model, data, state, time, mocap, userdata,
                /*xfrc_std=*/0, /*xfrc_rate=*/1, steps);
 }
@@ -187,6 +189,10 @@ void Trajectory::NoisyRollout(
     mju_copy(DataAt(states, (t + 1) * dim_state), data->qpos, nq);
     mju_copy(DataAt(states, (t + 1) * dim_state + nq), data->qvel, nv);
     mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv), data->act, na);
+    mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv + na), data->actuator_length, nu);
+    mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv + na + nu), data->actuator_velocity, nu);
+    // std::cout<<"copy actuator "<<states[(t + 1) * dim_state + nq + nv + na + 78]<<std::endl;
+    
     times[t + 1] = data->time;
   }
 
@@ -299,6 +305,9 @@ void Trajectory::NoisyRollout(
     mju_copy(DataAt(states, (t + 1) * dim_state), data->qpos, nq);
     mju_copy(DataAt(states, (t + 1) * dim_state + nq), data->qvel, nv);
     mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv), data->act, na);
+    mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv + na), data->actuator_length, nu);
+    mju_copy(DataAt(states, (t + 1) * dim_state + nq + nv + na + nu), data->actuator_velocity, nu);
+    std::cout<<"copy actuator "<<states[(t + 1) * dim_state + nq + nv + na + 78]<<std::endl;
     times[t + 1] = data->time;
   }
 

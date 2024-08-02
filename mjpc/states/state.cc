@@ -26,7 +26,7 @@ namespace mjpc {
 // allocate memory
 void State::Allocate(const mjModel* model) {
   const std::unique_lock<std::shared_mutex> lock(mtx_);
-  state_.resize(model->nq + model->nv + model->na*3);
+  state_.resize(model->nq + model->nv + model->na + 2*model->nu);
   mocap_.resize(7 * model->nmocap);
   userdata_.resize(model->nuserdata);
 }
@@ -44,8 +44,8 @@ void State::Reset() {
 void State::Set(const mjModel* model, const mjData* data) {
   if (model && data) {
     const std::unique_lock<std::shared_mutex> lock(mtx_);
-
-    state_.resize(model->nq + model->nv + model->na*3);
+    //additionally sync act len and vel
+    state_.resize(model->nq + model->nv + model->na + 2*model->nu);
     mocap_.resize(7 * model->nmocap);
 
     // state
@@ -61,12 +61,16 @@ void State::Set(const mjModel* model, const mjData* data) {
 
     // time
     SetTime(model, data->time);
+
+    //actuator
+    SetActuator(model, data->actuator_length, data->actuator_velocity);
   }
 }
 
 void State::Set(const mjModel* model, const double* qpos, const double* qvel,
                 const double* act, const double* mocap_pos,
-                const double* mocap_quat, const double* userdata, double time) {
+                const double* mocap_quat, const double* userdata, double time,
+                const double* actuator_length, const double* actuator_velocity) {
   // lock
   const std::unique_lock<std::shared_mutex> lock(mtx_);
 
@@ -86,6 +90,9 @@ void State::Set(const mjModel* model, const double* qpos, const double* qvel,
 
   // time
   SetTime(model, time);
+
+  //actuator
+  SetActuator(model, actuator_length, actuator_velocity);
 }
 
 // TODO: make all these "Set*" functions thread-safe, or change their name.
@@ -123,6 +130,12 @@ void State::SetUserData(const mjModel* model, const double* userdata) {
 // set time
 void State::SetTime(const mjModel* model, double time) {
   time_ = time;
+}
+
+// set actuator length and velocity
+void State::SetActuator(const mjModel* model, const double* actuator_length, const double* actuator_velocity) {
+  mju_copy(DataAt(state_, model->nq + model->nv+model->na), actuator_length, model->nu);
+  mju_copy(DataAt(state_, model->nq + model->nv+model->na + model->nu), actuator_velocity, model->nu);
 }
 
 void State::CopyTo(double* dst_state, double* dst_mocap,
