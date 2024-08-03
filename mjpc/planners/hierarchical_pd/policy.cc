@@ -112,7 +112,7 @@ void HierarchicalPDPolicy::HighToLowAction(double* high_level_action, double* ac
   // std::cout<<"high level action "<<high_act_vec.maxCoeff()<<" "<<high_act_vec.minCoeff()<<std::endl;
 
   // position
-  high_level_action[6] = 2;
+  // high_level_action[6] = 2;
   // high_level_action[56] = 3.14;
   // high_level_action[76] = 3.14;
 
@@ -121,8 +121,8 @@ void HierarchicalPDPolicy::HighToLowAction(double* high_level_action, double* ac
 
   
 
-  high_level_action[56] = 2;
-  high_level_action[76] = 2;
+  // high_level_action[56] = 2;
+  // high_level_action[76] = 2;
 
   // restrict the next position given the current position
   // for (int i=0; i<model->nv; i++) {
